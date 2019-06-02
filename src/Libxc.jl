@@ -1,6 +1,5 @@
 module Libxc
 using Libdl
-using Printf
 
 # Load in `deps.jl`, complaining if it does not exist
 const depsjl_path = joinpath(@__DIR__, "..", "deps", "deps.jl")
@@ -15,33 +14,11 @@ function __init__()
     check_deps()
 end
 
-export func_num
+export XCFuncType
 
-function func_num()
-    d = Dict{String, String}()
+include("version.jl")
+include("xc.jl")
+include("functionals_info.jl")
 
-    open(joinpath(root_path, "src", "functionals.jl"), "w") do f
-        for i in 1:1000
-            out = ""
-            try
-                out = readchomp(`$xcinfo $i`)
-            catch
-                continue
-            end
-            ss = split(out, r"\n|\t")
-
-            # Dict_keys are (name: family: kink: func_id: comment:)
-            for s in ss[1:5]
-                kv = split(s, ":")
-                k, v = strip.(kv)
-                d[k] = v
-            end
-
-            #
-            out_str = @sprintf "const  %-26s = %6s # %s\n" uppercase(d["name"]) d["func_id"] d["comment"]
-            write(f, out_str)
-        end
-    end
-end
 
 end # module

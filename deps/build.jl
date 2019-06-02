@@ -4,9 +4,9 @@ using BinaryProvider # requires BinaryProvider 0.3.0 or later
 const verbose = "--verbose" in ARGS
 const prefix = Prefix(get([a for a in ARGS if a != "--verbose"], 1, joinpath(@__DIR__, "usr")))
 products = [
-    ExecutableProduct(prefix, "xc-threshold", :threshold),
+    ExecutableProduct(prefix, "xc-threshold", :xcthreshold),
     LibraryProduct(prefix, ["libxc"], :libxc),
-    ExecutableProduct(prefix, "xc-info", :info),
+    ExecutableProduct(prefix, "xc-info", :xcinfo),
 ]
 
 # Download binaries from hosted location
