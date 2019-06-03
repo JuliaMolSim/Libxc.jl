@@ -3,6 +3,9 @@ uuid = "66e17ffc-8502-11e9-23b5-c9248d0eb96d"
 authors = ["Jason Eu <morty.yu@yahoo.com>"]
 version = "0.1.0"
 
+[compat]
+julia = "1"
+
 [deps]
 BinaryProvider = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
 Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
