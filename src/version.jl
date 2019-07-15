@@ -1,11 +1,8 @@
 function xc_version()
-    a = Ref{Cint}(0)
-    b = Ref{Cint}(0)
-    c = Ref{Cint}(0)
-    ccall( (:xc_version, libxc), Cvoid, (Ref{Cint}, Ref{Cint}, Ref{Cint}), a, b, c)
-    return Base.convert(Int64, a[]),
-           Base.convert(Int64, b[]),
-           Base.convert(Int64, c[])
+    varray = zeros(Cint, 3)
+    ccall((:xc_version, libxc), Cvoid, (Ptr{Cint}, Ptr{Cint}, Ptr{Cint}),
+          pointer(varray, 1), pointer(varray, 2), pointer(varray, 3))
+    VersionNumber(varray[1], varray[2], varray[3])
 end
 
 function xc_version_string()

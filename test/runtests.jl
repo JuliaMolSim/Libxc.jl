@@ -2,7 +2,7 @@ using Test
 using Libxc
 
 @testset "Version" begin
-    @test isa(Libxc.xc_version(), Tuple{Int64, Int64, Int64})
+    @test isa(Libxc.xc_version(), VersionNumber)
     @test isa(Libxc.xc_version_string(), String)
 end
 

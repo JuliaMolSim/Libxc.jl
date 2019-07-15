@@ -109,7 +109,7 @@ mutable struct XCFuncType
 end
 
 xc_func_alloc() = ccall( (:xc_func_alloc, libxc), Ptr{XCFuncType}, () )
-xc_func_init(p::Ptr{XCFuncType}, functional::Int, nspin::Int) =
+xc_func_init(p::Ptr{XCFuncType}, functional::Integer, nspin::Integer) =
     ccall( (:xc_func_init, libxc), Cint, (Ptr{XCFuncType}, Cint, Cint), p, functional, nspin)
 xc_func_end(p::Ptr{XCFuncType}) = ccall( (:xc_func_end, libxc), Cvoid, (Ptr{XCFuncType},), p)
 xc_func_free(p::Ptr{XCFuncType}) = ccall( (:xc_func_free, libxc), Cvoid, (Ptr{XCFuncType},), p)
