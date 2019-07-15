@@ -45,3 +45,13 @@ result = zeros(Float64, 5)
     Libxc.xc_func_end(ptr)
     Libxc.xc_func_free(ptr)
 end
+
+@testset "High-level interface" begin
+    func = Libxc.Functional(:lda_x)
+    Libxc.evaluate_lda!(func, rho, E=result)
+    @test result ≈ [-0.342809, -0.431912, -0.494416, -0.544175, -0.586194] atol=1e-5
+
+    func = Libxc.Functional(:gga_x_pbe)
+    Libxc.evaluate_gga!(func, rho, sigma, E=result)
+    @test result ≈ [-0.452598, -0.478878, -0.520674, -0.561428, -0.598661] atol=1e-5
+end
