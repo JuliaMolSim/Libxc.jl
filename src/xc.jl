@@ -115,7 +115,7 @@ xc_func_end(p::Ptr{XCFuncType}) = ccall( (:xc_func_end, libxc), Cvoid, (Ptr{XCFu
 xc_func_free(p::Ptr{XCFuncType}) = ccall( (:xc_func_free, libxc), Cvoid, (Ptr{XCFuncType},), p)
 xc_func_get_info(p::Ptr{XCFuncType}) = ccall( (:xc_func_get_info, libxc), Ptr{XCFuncInfoType}, (Ref{XCFuncType},), p )
 xc_func_set_dens_threshold(p::Ptr{XCFuncType}, dens_threshold::Float64) = ccall( (:xc_func_set_dens_threshold, libxc), Cvoid, (Ptr{XCFuncType}, Float64), p, dens_threshold)
-xc_func_set_ext_params(p::Ptr{XCFuncType}, ext_params::Ptr{Float64}) = ccall( (:xc_func_set_dens_threshold, libxc), Cvoid, (Ptr{XCFuncType}, Ptr{Float64}), p, ext_params)
+xc_func_set_ext_params(p::Ptr{XCFuncType}, ext_params::Ptr{Float64}) = ccall( (:xc_func_set_ext_params, libxc), Cvoid, (Ptr{XCFuncType}, Ptr{Float64}), p, ext_params)
 
 ######################################################################
 ##  LDA-xc

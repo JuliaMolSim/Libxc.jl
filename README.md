@@ -8,7 +8,7 @@ Binary built by using [BinaryBuilder](https://github.com/JuliaPackaging/BinaryBu
 Now it is registered in [JuliaRegisties](https://github.com/JuliaRegistries/General), thus can be installed by running:
 
 ```sh
-(v1.1) pkg> add Libxcs
+(v1.1) pkg> add Libxc
 ```
 
 When wrapping new libxc version, first run `update_functionals_info.jl` to update functionals' info
