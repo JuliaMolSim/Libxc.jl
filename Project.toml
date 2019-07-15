@@ -1,7 +1,7 @@
 name = "Libxc"
 uuid = "66e17ffc-8502-11e9-23b5-c9248d0eb96d"
 authors = ["Jason Eu <morty.yu@yahoo.com>"]
-version = "0.1.0"
+version = "0.1.2"
 
 [compat]
 julia = "1"

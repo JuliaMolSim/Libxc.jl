@@ -4,3 +4,8 @@
 deps/usr
 deps/deps.jl
 deps/build.log
+
+# vim temporaries
+*~
+.*.swp
+.*.swo
