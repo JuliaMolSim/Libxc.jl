@@ -142,7 +142,7 @@ xc_gga!(p::Ptr{XCFuncType}, np::Int,
         rho::Array{Float64, 1}, sigma::Array{Float64, 1},
         zk::Array{Float64, 1}, vrho::Array{Float64, 1}, vsigma::Array{Float64, 1},
         v2rho2::Array{Float64, 1}, v2rhosigma::Array{Float64, 1}, v2sigma2::Array{Float64, 1},
-        v3rho3::Array{Float64, 1}, v3rhosigma::Array{Float64, 1}, v3rhosigma2::Array{Float64, 1}, v3sigma3::Array{Float64, 1}) =
+        v3rho3::Array{Float64, 1}, v3rho2sigma::Array{Float64, 1}, v3rhosigma2::Array{Float64, 1}, v3sigma3::Array{Float64, 1}) =
     ccall( (:xc_gga, libxc), Cvoid, (Ptr{XCFuncType}, Cint,
                                      Ptr{Float64}, Ptr{Float64},
                                      Ptr{Float64}, Ptr{Float64}, Ptr{Float64},
@@ -152,7 +152,7 @@ xc_gga!(p::Ptr{XCFuncType}, np::Int,
                                      rho, sigma,
                                      zk, vrho, vsigma,
                                      v2rho2, v2rhosigma, v2sigma2,
-                                     v3rho3, v3rhosigma, v3rhosigma2, v3sigma3)
+                                     v3rho3, v3rho2sigma, v3rhosigma2, v3sigma3)
 
 xc_gga_exc!(p::Ptr{XCFuncType}, np::Int, rho::Array{Float64, 1}, sigma::Array{Float64, 1},
             zk::Array{Float64, 1}) =
