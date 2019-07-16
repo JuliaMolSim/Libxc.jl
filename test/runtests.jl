@@ -27,10 +27,11 @@ end
     Libxc.xc_func_free(reff)
 end
 
-rho = [0.1, 0.2, 0.3, 0.4, 0.5]
-sigma = [0.2, 0.3, 0.4, 0.5, 0.6]
-result = zeros(Float64, 5)
 @testset "XCFuncType xc calc" begin
+    rho = [0.1, 0.2, 0.3, 0.4, 0.5]
+    sigma = [0.2, 0.3, 0.4, 0.5, 0.6]
+    result = zeros(Float64, 5)
+
     ptr = Libxc.xc_func_alloc()
     Libxc.xc_func_init(ptr, Libxc.LDA_X, 1)
     Libxc.xc_lda_exc!(ptr, 5, rho, result)
@@ -47,6 +48,10 @@ result = zeros(Float64, 5)
 end
 
 @testset "High-level interface" begin
+    rho = [0.1, 0.2, 0.3, 0.4, 0.5]
+    sigma = [0.2, 0.3, 0.4, 0.5, 0.6]
+    result = zeros(Float64, 5)
+
     func = Libxc.Functional(:lda_x)
     Libxc.evaluate_lda!(func, rho, E=result)
     @test result ≈ [-0.342809, -0.431912, -0.494416, -0.544175, -0.586194] atol=1e-5
