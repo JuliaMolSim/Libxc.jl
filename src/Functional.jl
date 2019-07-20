@@ -31,7 +31,7 @@ end
 
 mutable struct Functional
     number::Int
-    name::String
+    identifier::Symbol
     kind::FunctionalKind
     family::FunctionalFamily
     n_spin::Int
@@ -42,12 +42,12 @@ end
 
 
 """
-    Functional(identifier; n_spin::Integer = 1)
+    Functional(identifier::Symbol; n_spin::Integer = 1)
 
 Construct a Functional from a libxc `identifier` and the number
 of spins `n_spin` to consider. `
 """
-function Functional(identifier; n_spin::Integer = 1)
+function Functional(identifier::Symbol; n_spin::Integer = 1)
     if n_spin != 1 && n_spin != 2
         error("n_spin needs to be 1 or 2")
     end
@@ -79,7 +79,7 @@ function Functional(identifier; n_spin::Integer = 1)
         # TODO Extract references ....
 
         # Make functional and attach finalizer for cleaning up the pointer
-        func = Functional(number, string(identifier), FunctionalKind(kind),
+        func = Functional(number, identifier, FunctionalKind(kind),
                           FunctionalFamily(family), n_spin, pointer)
         finalizer(cls -> pointer_cleanup(cls.pointer), func)
         return func
