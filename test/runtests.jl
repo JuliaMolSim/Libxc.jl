@@ -52,11 +52,23 @@ end
     sigma = [0.2, 0.3, 0.4, 0.5, 0.6]
     result = zeros(Float64, 5)
 
+    # LDA
     func = Libxc.Functional(:lda_x)
+    @test func.identifier == :lda_x
+    @test func.number == 1
+    @test func.family == Libxc.family_lda
+    @test func.n_spin == 1
+
     Libxc.evaluate_lda!(func, rho, E=result)
     @test result ≈ [-0.342809, -0.431912, -0.494416, -0.544175, -0.586194] atol=1e-5
 
+    # GGA
     func = Libxc.Functional(:gga_x_pbe)
+    @test func.identifier == :gga_x_pbe
+    @test func.number == 101
+    @test func.family == Libxc.family_gga
+    @test func.n_spin == 1
+
     Libxc.evaluate_gga!(func, rho, sigma, E=result)
     @test result ≈ [-0.452598, -0.478878, -0.520674, -0.561428, -0.598661] atol=1e-5
 end
