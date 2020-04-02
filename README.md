@@ -3,9 +3,7 @@
 
 julia wrapper of library [Libxc](https://tddft.org/programs/libxc/) (exchange-correlation functionals for density-functional theory. )
 
-Binary built by using [BinaryBuilder](https://github.com/JuliaPackaging/BinaryBuilder.jl) and provided by [BinaryProvider](https://github.com/JuliaPackaging/BinaryProvider.jl).
-
-Now it is registered in [JuliaRegisties](https://github.com/JuliaRegistries/General), thus can be installed by running:
+Registered in [JuliaRegisties](https://github.com/JuliaRegistries/General), thus can be installed by running:
 
 ```sh
 (v1.1) pkg> add Libxc

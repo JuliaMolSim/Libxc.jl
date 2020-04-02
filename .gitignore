@@ -1,9 +1,7 @@
 *.jl.cov
 *.jl.*.cov
 *.jl.mem
-deps/usr
-deps/deps.jl
-deps/build.log
+Manifest.toml
 
 # vim temporaries
 *~
