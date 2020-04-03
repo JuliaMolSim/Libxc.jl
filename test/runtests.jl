@@ -72,3 +72,41 @@ end
     Libxc.evaluate_gga!(func, rho, sigma, E=result)
     @test result ≈ [-0.452598, -0.478878, -0.520674, -0.561428, -0.598661] atol=1e-5
 end
+
+@testset "High-level interface with spin" begin
+    rho = abs.(randn(5))
+    sigma = abs.(randn(5))
+
+    # Duplicate rho and sigma for spin = 2 tests
+    rho2 = zeros(Float64, 2length(rho))
+    rho2[1:2:end] = rho2[2:2:end] = rho ./ 2
+
+    sigma2 = zeros(Float64, 3length(rho))
+    sigma2[1:3:end] = sigma2[2:3:end] = sigma2[3:3:end] = sigma ./ 4
+
+    # LSDA
+    for sym in (:lda_x, :lda_c_vwn)
+        E = zeros(Float64, length(rho))
+        func = Libxc.Functional(sym, n_spin=1)
+        Libxc.evaluate_lda!(func, rho, E=E)
+
+        E2 = zeros(Float64, length(rho))
+        func = Libxc.Functional(sym, n_spin=2)
+        Libxc.evaluate_lda!(func, rho2, E=E2)
+
+        @test E ≈ E2
+    end
+
+    # GGA
+    for sym in (:gga_x_pbe, :gga_c_pbe)
+        E = zeros(Float64, length(rho))
+        func = Libxc.Functional(sym, n_spin=1)
+        Libxc.evaluate_gga!(func, rho, sigma, E=E)
+
+        E2 = zeros(Float64, length(rho))
+        func = Libxc.Functional(sym, n_spin=2)
+        Libxc.evaluate_gga!(func, rho2, sigma2, E=E2)
+
+        @test E ≈ E2
+    end
+end
