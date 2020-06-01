@@ -1,4 +1,4 @@
-name: Run Libxc CI on Windows
+name: Windows tests
 on:
   push:
     branches:
