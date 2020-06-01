@@ -1,11 +1,13 @@
 # Libxc.jl
 
-| **Build Status**                                       |  **License**                     |
-|:------------------------------------------------------ |:-------------------------------- |
-| [![][travis-img]][travis-url] [![][cov-img]][cov-url]  | [![][license-img]][license-url]  |
+| **Build Status**                                                      |  **License**                     |
+|:--------------------------------------------------------------------- |:-------------------------------- |
+| [![][travis-img]][travis-url] ![][winci-img] [![][cov-img]][cov-url]  | [![][license-img]][license-url]  |
 
 [travis-img]: https://travis-ci.com/JuliaMolSim/Libxc.jl.svg?branch=master
 [travis-url]: https://travis-ci.com/JuliaMolSim/Libxc.jl
+
+[winci-img]: https://github.com/JuliaMolSim/Libxc.jl/workflows/Windows%20tests/badge.svg
 
 [cov-img]: https://coveralls.io/repos/JuliaMolSim/Libxc.jl/badge.svg?branch=master&service=github
 [cov-url]: https://coveralls.io/github/JuliaMolSim/Libxc.jl?branch=master
