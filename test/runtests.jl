@@ -1,6 +1,9 @@
 using Test
 using Libxc
 
+# Wrap in an outer testset to get a full report if one test fails
+@testset "Libxc.jl" begin
+
 @testset "Version" begin
     @test isa(Libxc.xc_version(), VersionNumber)
     @test isa(Libxc.xc_version_string(), String)
@@ -110,3 +113,5 @@ end
         @test E ≈ E2
     end
 end
+
+end  # outer wrapper
