@@ -1,6 +1,6 @@
 name = "Libxc"
 uuid = "66e17ffc-8502-11e9-23b5-c9248d0eb96d"
-authors = ["Jason Eu <morty.yu@yahoo.com>"]
+authors = ["Jason Eu <morty.yu@yahoo.com>", "Michael F. Herbst <info@michael-herbst.com>"]
 version = "0.1.3"
 
 [deps]

@@ -1,4 +1,26 @@
+branches:
+  only:
+    # Only build master and version tags
+    - master
+    - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
+
 language: julia
+cache:
+  directories:
+  - $HOME/.julia/artifacts
+
+script: |  # Test with coverage
+  julia -e '
+    using Pkg
+    Pkg.build(; verbose = true)
+    Pkg.test(coverage=true)
+  '
+after_success: |  # Upload coverage when things are good.
+  julia -e '
+    using Pkg; Pkg.add("Coverage"); using Coverage;
+    coverage = Coveralls.process_folder();
+    Coveralls.submit(coverage)
+  '
 
 os:
   - osx
