@@ -1,43 +1,62 @@
-"""Return the list of available libxc functionals as strings"""
-function available_functionals()
-    n_xc = ccall((:xc_number_of_functionals, libxc), Cint, ())
-    max_string_length = ccall((:xc_maximum_name_length, libxc), Cint, ())
+const KINDMAP = Dict(
+    XC_EXCHANGE             => :exchange,
+    XC_CORRELATION          => :correlation,
+    XC_EXCHANGE_CORRELATION => :exchange_correlation,
+    XC_KINETIC              => :kinetic,
+)
 
-    funcnames = Vector{String}(undef, n_xc)
-    for i in 1:n_xc
-        funcnames[i] = "\0"^(max_string_length + 2)
+const FAMILIYMAP = Dict(
+    XC_FAMILY_UNKNOWN   => :unknown,
+    XC_FAMILY_LDA       => :lda,
+    XC_FAMILY_GGA       => :gga,
+    XC_FAMILY_MGGA      => :mgga,
+    XC_FAMILY_LCA       => :lca,
+    XC_FAMILY_OEP       => :oep,
+    XC_FAMILY_HYB_GGA   => :hyb_gga,
+    XC_FAMILY_HYB_MGGA  => :hyb_mgga,
+    XC_FAMILY_HYB_LDA   => :hyb_lda,
+)
+
+const FLAGMAP = Dict(
+    XC_FLAGS_HAVE_EXC        => :exc,
+    XC_FLAGS_HAVE_VXC        => :vxc,
+    XC_FLAGS_HAVE_FXC        => :fxc,
+    XC_FLAGS_HAVE_KXC        => :kxc,
+    XC_FLAGS_HAVE_LXC        => :lxc,
+    XC_FLAGS_1D              => :dim1,
+    XC_FLAGS_2D              => :dim2,
+    XC_FLAGS_3D              => :dim3,
+    XC_FLAGS_HYB_CAM         => :hyb_cam,
+    XC_FLAGS_HYB_CAMY        => :hym_camy,
+    XC_FLAGS_VV10            => :vv10,
+    XC_FLAGS_HYB_LC          => :hyb_lc,
+    XC_FLAGS_HYB_LCY         => :hyb_lcy,
+    XC_FLAGS_STABLE          => :stable,
+    XC_FLAGS_DEVELOPMENT     => :development,
+    XC_FLAGS_NEEDS_LAPLACIAN => :needs_laplacian,
+)
+
+function extract_flags(flags)
+    ret = Symbol[]
+    for (flag, sym) in pairs(FLAGMAP)
+        flag & flags == 1 && push!(ret, sym)
     end
-    ccall((:xc_available_functional_names, libxc), Cvoid, (Ptr{Ptr{UInt8}}, ), funcnames)
-    [string(split(funcnames[i], "\0")[1]) for i in 1:n_xc]
+    ret
 end
 
-@enum FunctionalKind begin
-    functional_exchange             = 0
-    functional_correlation          = 1
-    functional_exchange_correlation = 2
-    functional_kinetic              = 3
-end
 
-@enum FunctionalFamily begin
-    family_unknown  = -1
-    family_lda      = 1
-    family_gga      = 2
-    family_mggai    = 4
-    family_lca      = 8
-    family_oep      = 16
-    family_hyb_gga  = 32
-    family_hyb_mgga = 64
-end
-
+"""
+Struct for a Libxc functional and some basic information
+"""
 mutable struct Functional
-    number::Int
     identifier::Symbol
-    kind::FunctionalKind
-    family::FunctionalFamily
     n_spin::Int
+    kind::Symbol
+    family::Symbol
+    flags::Vector{Symbol}
 
-    # Pointer holding the LibXC representation of this functional
-    pointer::Ptr{XCFuncType}
+    # Pointer holding the Libxc representation of this functional
+    pointer_::Ptr{xc_func_type}
 end
 
 
@@ -48,17 +67,12 @@ Construct a Functional from a libxc `identifier` and the number
 of spins `n_spin` to consider. `
 """
 function Functional(identifier::Symbol; n_spin::Integer = 1)
-    if n_spin != 1 && n_spin != 2
-        error("n_spin needs to be 1 or 2")
-    end
+    n_spin in (1, 2) || error("n_spin needs to be 1 or 2")
 
-    number = ccall((:xc_functional_get_number, libxc), Cint, (Cstring, ),
-                   string(identifier))
-    if number == -1
-        error("Functional $identifier is not known.")
-    end
+    number = xc_functional_get_number(string(identifier))
+    number == -1 && error("Functional $identifier is not known.")
 
-    function pointer_cleanup(ptr::Ptr{XCFuncType})
+    function pointer_cleanup(ptr::Ptr{xc_func_type})
         if ptr != C_NULL
             xc_func_end(ptr)
             xc_func_free(ptr)
@@ -67,21 +81,17 @@ function Functional(identifier::Symbol; n_spin::Integer = 1)
 
     pointer = xc_func_alloc()
     ret = xc_func_init(pointer, number, n_spin)
-    if ret != 0
-        error("Something went wrong initialising the functional")
-    end
+    ret != 0 && error("Something went wrong initialising the functional")
 
     try
         funcinfo = xc_func_get_info(pointer)
-        kind = xc_func_info_get_kind(funcinfo)
-        family = xc_func_info_get_family(funcinfo)
-        flags = xc_func_info_get_flags(funcinfo)
-        # TODO Extract references ....
+        kind     = KINDMAP[xc_func_info_get_kind(funcinfo)]
+        family   = FAMILIYMAP[xc_func_info_get_family(funcinfo)]
+        flags    = extract_flags(xc_func_info_get_flags(funcinfo))
 
         # Make functional and attach finalizer for cleaning up the pointer
-        func = Functional(number, identifier, FunctionalKind(kind),
-                          FunctionalFamily(family), n_spin, pointer)
-        finalizer(cls -> pointer_cleanup(cls.pointer), func)
+        func = Functional(identifier, n_spin, kind, family, flags, pointer)
+        finalizer(cls -> pointer_cleanup(cls.pointer_), func)
         return func
     catch
         pointer_cleanup(pointer)

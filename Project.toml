@@ -7,7 +7,7 @@ version = "0.2.0"
 Libxc_jll = "a56a6d9d-ad03-58af-ab61-878bf78270d6"
 
 [compat]
-Libxc_jll = "4.3"
+Libxc_jll = "5"
 julia = "1.3"
 
 [extras]
