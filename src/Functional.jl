@@ -1,3 +1,68 @@
+"""
+Struct for a Libxc functional and some basic information
+"""
+mutable struct Functional
+    identifier::Symbol
+    n_spin::Int
+    kind::Symbol
+    family::Symbol
+    flags::Vector{Symbol}
+
+    # Spin dimensions libxc expects for various quantities
+    # Note: Only the symbols actually meaningful for this functional
+    # contain valid information
+    spin_dimensions
+
+    # Pointer holding the Libxc representation of this functional
+    pointer_::Ptr{xc_func_type}
+
+end
+
+
+"""
+    Functional(identifier::Symbol; n_spin::Integer = 1)
+
+Construct a Functional from a libxc `identifier` and the number
+of spins `n_spin` to consider. `
+"""
+function Functional(identifier::Symbol; n_spin::Integer = 1)
+    n_spin in (1, 2) || error("n_spin needs to be 1 or 2")
+
+    number = xc_functional_get_number(string(identifier))
+    number == -1 && error("Functional $identifier is not known.")
+
+    function pointer_cleanup(ptr::Ptr{xc_func_type})
+        if ptr != C_NULL
+            xc_func_end(ptr)
+            xc_func_free(ptr)
+        end
+    end
+
+    pointer = xc_func_alloc()
+    ret = xc_func_init(pointer, number, n_spin)
+    ret != 0 && error("Something went wrong initialising the functional")
+
+    try
+        funcinfo = xc_func_get_info(pointer)
+        kind     = KINDMAP[xc_func_info_get_kind(funcinfo)]
+        family   = FAMILIYMAP[xc_func_info_get_family(funcinfo)]
+        flags    = extract_flags(xc_func_info_get_flags(funcinfo))
+        dimensions = unsafe_load(pointer).dim
+
+        # Make functional and attach finalizer for cleaning up the pointer
+        func = Functional(identifier, n_spin, kind, family, flags, dimensions, pointer)
+        finalizer(cls -> pointer_cleanup(cls.pointer_), func)
+        return func
+    catch
+        pointer_cleanup(pointer)
+        rethrow()
+    end
+end
+
+
+# Provide maps which translate between the conventions
+# used in Libxc.jl and libxc
+
 const KINDMAP = Dict(
     XC_EXCHANGE             => :exchange,
     XC_CORRELATION          => :correlation,
@@ -42,59 +107,4 @@ function extract_flags(flags)
         flag & flags == 1 && push!(ret, sym)
     end
     ret
-end
-
-
-"""
-Struct for a Libxc functional and some basic information
-"""
-mutable struct Functional
-    identifier::Symbol
-    n_spin::Int
-    kind::Symbol
-    family::Symbol
-    flags::Vector{Symbol}
-
-    # Pointer holding the Libxc representation of this functional
-    pointer_::Ptr{xc_func_type}
-end
-
-
-"""
-    Functional(identifier::Symbol; n_spin::Integer = 1)
-
-Construct a Functional from a libxc `identifier` and the number
-of spins `n_spin` to consider. `
-"""
-function Functional(identifier::Symbol; n_spin::Integer = 1)
-    n_spin in (1, 2) || error("n_spin needs to be 1 or 2")
-
-    number = xc_functional_get_number(string(identifier))
-    number == -1 && error("Functional $identifier is not known.")
-
-    function pointer_cleanup(ptr::Ptr{xc_func_type})
-        if ptr != C_NULL
-            xc_func_end(ptr)
-            xc_func_free(ptr)
-        end
-    end
-
-    pointer = xc_func_alloc()
-    ret = xc_func_init(pointer, number, n_spin)
-    ret != 0 && error("Something went wrong initialising the functional")
-
-    try
-        funcinfo = xc_func_get_info(pointer)
-        kind     = KINDMAP[xc_func_info_get_kind(funcinfo)]
-        family   = FAMILIYMAP[xc_func_info_get_family(funcinfo)]
-        flags    = extract_flags(xc_func_info_get_flags(funcinfo))
-
-        # Make functional and attach finalizer for cleaning up the pointer
-        func = Functional(identifier, n_spin, kind, family, flags, pointer)
-        finalizer(cls -> pointer_cleanup(cls.pointer_), func)
-        return func
-    catch
-        pointer_cleanup(pointer)
-        rethrow()
-    end
 end

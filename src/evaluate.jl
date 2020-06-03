@@ -1,70 +1,189 @@
-function evaluate_lda!(func::Functional, ρ::Array{Float64}; kwargs...)
-    @assert func.family == family_lda
-    n_p = Int(length(ρ) / func.n_spin)
+# The required / allowed input and output arguments per functional family
+# :input refers to input argument and numbers to the derivative order
+const ARGUMENTS = Dict(
+    :lda => [[:vrho], [:v2rho2], [:v3rho3], [:v4rho4], ],
+    :gga => [
+        [:vrho, :vsigma],
+        [:v2rho2, :v2rhosigma, :v2sigma2],
+        [:v3rho3, :v3rho2sigma, :v3rhosigma2, :v3sigma3],
+        [:v4rho4, :v4rho3sigma, :v4rho2sigma2, :v4rhosigma3, :v4sigma4],
+    ],
+    :mgga => [
+        [:vrho, :vsigma, :vlapl, :vtau],
+        [:v2rho2, :v2rhosigma, :v2rholapl, :v2rhotau, :v2sigma2, :v2sigmalapl,
+         :v2sigmatau, :v2lapl2, :v2lapltau, :v2tau2],
+        [:v3rho3, :v3rho2sigma, :v3rho2lapl, :v3rho2tau, :v3rhosigma2, :v3rhosigmalapl,
+         :v3rhosigmatau, :v3rholapl2, :v3rholapltau, :v3rhotau2, :v3sigma3, :v3sigma2lapl,
+         :v3sigma2tau, :v3sigmalapl2, :v3sigmalapltau, :v3sigmatau2, :v3lapl3,
+         :v3lapl2tau, :v3lapltau2, :v3tau3],
+        [:v4rho4, :v4rho3sigma, :v4rho3lapl, :v4rho3tau, :v4rho2sigma2, :v4rho2sigmalapl,
+         :v4rho2sigmatau, :v4rho2lapl2, :v4rho2lapltau, :v4rho2tau2, :v4rhosigma3,
+         :v4rhosigma2lapl, :v4rhosigma2tau, :v4rhosigmalapl2, :v4rhosigmalapltau,
+         :v4rhosigmatau2, :v4rholapl3, :v4rholapl2tau, :v4rholapltau2, :v4rhotau3,
+         :v4sigma4, :v4sigma3lapl, :v4sigma3tau, :v4sigma2lapl2, :v4sigma2lapltau,
+         :v4sigma2tau2, :v4sigmalapl3, :v4sigmalapl2tau, :v4sigmalapltau2, :v4sigmatau3,
+         :v4lapl4, :v4lapl3tau, :v4lapl2tau2, :v4lapltau3, :v4tau4],
+     ],
+)
+const INPUT = Dict(
+    :lda => [[:rho]],
+    :gga => [[:rho, :sigma]],
+    :mgga => [[:rho, :sigma, :lapl_rho, :tau]],
+)
 
-    sizes = Dict(:E => n_p, :Vρ => 2n_p, :V2ρ2 => 3n_p, :V3ρ3 => 4n_p)
-    if func.n_spin == 1
-        for key in keys(sizes)
-            sizes[key] = n_p
-        end
+const LibxcArray = Array{Float64}
+const LibxcOptArray = Union{LibxcArray, Ptr{Nothing}}
+
+
+function evaluate(func::Functional; derivative=1, rho::LibxcArray, kwargs...)
+    @assert 0 ≤ derivative ≤ 4
+
+    # If we have an n_spin × size array, keep the shape when allocating output arrays
+    if size(rho, 1) == func.spin_dimensions.rho
+        shape = size(rho)[2:end]
+    else
+        shape = (Int(length(rho) / func.spin_dimensions.rho), )
     end
 
-    dargs = Dict(kwargs)
-    for key in keys(dargs)
-        if !haskey(sizes, key)
-            throw(ArgumentError("Unknown keyword argument: $(string(key))"))
-        end
-        if length(dargs[key]) != sizes[key]
-            throw(DimensionMismatch("Length of keyword argument $(string(key)) == " *
-                                    "$(length(dargs[key])) does not agree with expected " *
-                                    "value $(sizes[key])"))
-        end
+    outargs = Dict(:E => similar(rho, shape))
+    for symbol in vcat(ARGUMENTS[func.family][1:derivative]...)
+        n_spin = getfield(func.spin_dimensions, symbol)
+        outargs[symbol] = similar(rho, n_spin, shape...)
     end
 
-    ccall((:xc_lda, libxc), Cvoid, (Ptr{XCFuncType}, Cint, Ptr{Float64}, Ptr{Float64},
-                                    Ptr{Float64}, Ptr{Float64}, Ptr{Float64}),
-          func.pointer, n_p, ρ, get(dargs, :E, C_NULL),
-          get(dargs, :Vρ, C_NULL), get(dargs, :V2ρ2, C_NULL), get(dargs, :V3ρ3, C_NULL)
-    )
+    evaluate!(func; rho=rho, kwargs..., outargs...)
+    (; outargs...)
 end
 
 
-function evaluate_gga!(func::Functional, ρ::Array{Float64}, σ::Array{Float64}; kwargs...)
-    @assert func.family == family_gga
-    n_p = Int(length(ρ) / func.n_spin)
-
-    n_σ = 3n_p
-    sizes = Dict(:E => n_p, :Vρ => 2n_p, :Vσ => 3n_p,
-                 :V2ρ2 => 3n_p, :V2ρσ => 6n_p, :V2σ2 => 6n_p,
-                 :V3ρ3 => 4n_p, :V3ρ2σ => 9n_p, :V3ρσ2 => 12n_p, :V3σ3 => 10n_p)
-    if func.n_spin == 1
-        n_σ = n_p
-        for key in keys(sizes)
-            sizes[key] = n_p
-        end
+function evaluate!(func::Functional; rho::LibxcArray, kwargs...)
+    n_p = Int(length(rho) / func.spin_dimensions.rho)
+    kwargs = Dict(kwargs)
+    for symbol in vcat(INPUT[func.family], ARGUMENTS[func.family]...)
+        symbol == :rho && continue
+        n_spin = getfield(func.spin_dimensions, symbol)
+        @assert length(kwargs[symbol]) == n_spin * n_p
     end
+    evaluate!(func, Val(func.family); rho=rho, kwargs...)
+end
 
-    dargs = Dict(kwargs)
-    for key in keys(dargs)
-        if !haskey(sizes, key)
-            throw(ArgumentError("Unknown keyword argument: $(string(key))"))
-        end
-        if length(dargs[key]) != sizes[key]
-            throw(DimensionMismatch("Length of keyword argument $(string(key)) == " *
-                                    "$(length(dargs[key])) does not agree with expected " *
-                                    "value $(sizes[key])"))
-        end
-    end
 
-    ccall((:xc_gga, libxc), Cvoid, (Ptr{XCFuncType}, Cint, Ptr{Float64}, Ptr{Float64},
-                                    Ptr{Float64}, Ptr{Float64}, Ptr{Float64},
-                                    Ptr{Float64}, Ptr{Float64}, Ptr{Float64},
-                                    Ptr{Float64}, Ptr{Float64}, Ptr{Float64},
-                                    Ptr{Float64}),
-          func.pointer, n_p, ρ, σ,
-          get(dargs, :E, C_NULL),    get(dargs, :Vρ, C_NULL),    get(dargs, :Vσ, C_NULL),
-          get(dargs, :V2ρ2, C_NULL), get(dargs, :V2ρσ, C_NULL),  get(dargs, :V2σ2, C_NULL),
-          get(dargs, :V3ρ3, C_NULL), get(dargs, :V3ρ2σ, C_NULL), get(dargs, :V3ρσ2, C_NULL),
-          get(dargs, :V3σ3, C_NULL)
-    )
+function evaluate!(func::Functional, ::Val{:lda};
+                   rho::LibxcArray,
+                   zk::LibxcOptArray=C_NULL,
+                   vrho::LibxcOptArray=C_NULL, v2rho2::LibxcOptArray=C_NULL,
+                   v3rho3::LibxcOptArray=C_NULL, v4rho4::LibxcOptArray=C_NULL)
+    np = Int(length(rho) / func.spin_dimensions.rho)
+    xc_lda(func.pointer, np, rho, zk, vrho, v2rho2, v3rho3, v4rho4)
+end
+
+
+function evaluate!(func::Functional, ::Val{:gga};
+                   rho::LibxcArray, sigma::LibxcArray,
+                   zk::LibxcOptArray=C_NULL,
+                   vrho::LibxcOptArray=C_NULL, vsigma::LibxcOptArray=C_NULL,
+                   v2rho2::LibxcOptArray=C_NULL, v2rhosigma::LibxcOptArray=C_NULL,
+                   v2sigma2::LibxcOptArray=C_NULL,
+                   v3rho3::LibxcOptArray=C_NULL, v3rho2sigma::LibxcOptArray=C_NULL,
+                   v3rhosigma2::LibxcOptArray=C_NULL, v3sigma3::LibxcOptArray=C_NULL,
+                   v4rho4::LibxcOptArray=C_NULL, v4rho3sigma::LibxcOptArray=C_NULL,
+                   v4rho2sigma2::LibxcOptArray=C_NULL, v4rhosigma3::LibxcOptArray=C_NULL,
+                   v4sigma4::LibxcOptArray=C_NULL)
+    np = Int(length(ρ) / func.spin_dimensions.rho)
+    xc_gga(p, np, rho, sigma, zk, vrho, vsigma, v2rho2, v2rhosigma, v2sigma2,
+           v3rho3, v3rho2sigma, v3rhosigma2, v3sigma3,
+           v4rho4, v4rho3sigma, v4rho2sigma2, v4rhosigma3, v4sigma4)
+end
+
+
+
+function evaluate!(func::Functional, ::Val{:mgga};
+                   rho::LibxcArray, sigma::LibxcArray,
+                   lapl_rho::LibxcArray, tau::LibxcArray,
+                   zk::LibxcOptArray=C_NULL,
+                   vrho::LibxcOptArray=C_NULL,
+                   vsigma::LibxcOptArray=C_NULL,
+                   vlapl::LibxcOptArray=C_NULL,
+                   vtau::LibxcOptArray=C_NULL,
+                   v2rho2::LibxcOptArray=C_NULL,
+                   v2rhosigma::LibxcOptArray=C_NULL,
+                   v2rholapl::LibxcOptArray=C_NULL,
+                   v2rhotau::LibxcOptArray=C_NULL,
+                   v2sigma2::LibxcOptArray=C_NULL,
+                   v2sigmalapl::LibxcOptArray=C_NULL,
+                   v2sigmatau::LibxcOptArray=C_NULL,
+                   v2lapl2::LibxcOptArray=C_NULL,
+                   v2lapltau::LibxcOptArray=C_NULL,
+                   v2tau2::LibxcOptArray=C_NULL,
+                   v3rho3::LibxcOptArray=C_NULL,
+                   v3rho2sigma::LibxcOptArray=C_NULL,
+                   v3rho2lapl::LibxcOptArray=C_NULL,
+                   v3rho2tau::LibxcOptArray=C_NULL,
+                   v3rhosigma2::LibxcOptArray=C_NULL,
+                   v3rhosigmalapl::LibxcOptArray=C_NULL,
+                   v3rhosigmatau::LibxcOptArray=C_NULL,
+                   v3rholapl2::LibxcOptArray=C_NULL,
+                   v3rholapltau::LibxcOptArray=C_NULL,
+                   v3rhotau2::LibxcOptArray=C_NULL,
+                   v3sigma3::LibxcOptArray=C_NULL,
+                   v3sigma2lapl::LibxcOptArray=C_NULL,
+                   v3sigma2tau::LibxcOptArray=C_NULL,
+                   v3sigmalapl2::LibxcOptArray=C_NULL,
+                   v3sigmalapltau::LibxcOptArray=C_NULL,
+                   v3sigmatau2::LibxcOptArray=C_NULL,
+                   v3lapl3::LibxcOptArray=C_NULL,
+                   v3lapl2tau::LibxcOptArray=C_NULL,
+                   v3lapltau2::LibxcOptArray=C_NULL,
+                   v3tau3::LibxcOptArray=C_NULL,
+                   v4rho4::LibxcOptArray=C_NULL,
+                   v4rho3sigma::LibxcOptArray=C_NULL,
+                   v4rho3lapl::LibxcOptArray=C_NULL,
+                   v4rho3tau::LibxcOptArray=C_NULL,
+                   v4rho2sigma2::LibxcOptArray=C_NULL,
+                   v4rho2sigmalapl::LibxcOptArray=C_NULL,
+                   v4rho2sigmatau::LibxcOptArray=C_NULL,
+                   v4rho2lapl2::LibxcOptArray=C_NULL,
+                   v4rho2lapltau::LibxcOptArray=C_NULL,
+                   v4rho2tau2::LibxcOptArray=C_NULL,
+                   v4rhosigma3::LibxcOptArray=C_NULL,
+                   v4rhosigma2lapl::LibxcOptArray=C_NULL,
+                   v4rhosigma2tau::LibxcOptArray=C_NULL,
+                   v4rhosigmalapl2::LibxcOptArray=C_NULL,
+                   v4rhosigmalapltau::LibxcOptArray=C_NULL,
+                   v4rhosigmatau2::LibxcOptArray=C_NULL,
+                   v4rholapl3::LibxcOptArray=C_NULL,
+                   v4rholapl2tau::LibxcOptArray=C_NULL,
+                   v4rholapltau2::LibxcOptArray=C_NULL,
+                   v4rhotau3::LibxcOptArray=C_NULL,
+                   v4sigma4::LibxcOptArray=C_NULL,
+                   v4sigma3lapl::LibxcOptArray=C_NULL,
+                   v4sigma3tau::LibxcOptArray=C_NULL,
+                   v4sigma2lapl2::LibxcOptArray=C_NULL,
+                   v4sigma2lapltau::LibxcOptArray=C_NULL,
+                   v4sigma2tau2::LibxcOptArray=C_NULL,
+                   v4sigmalapl3::LibxcOptArray=C_NULL,
+                   v4sigmalapl2tau::LibxcOptArray=C_NULL,
+                   v4sigmalapltau2::LibxcOptArray=C_NULL,
+                   v4sigmatau3::LibxcOptArray=C_NULL,
+                   v4lapl4::LibxcOptArray=C_NULL,
+                   v4lapl3tau::LibxcOptArray=C_NULL,
+                   v4lapl2tau2::LibxcOptArray=C_NULL,
+                   v4lapltau3::LibxcOptArray=C_NULL,
+                   v4tau4::LibxcOptArray=C_NULL)
+    np = Int(length(ρ) / func.spin_dimensions.rho)
+    xc_mgga(p, np, rho, sigma, lapl_rho, tau, zk, vrho, vsigma, vlapl, vtau,
+            v2rho2, v2rhosigma, v2rholapl, v2rhotau, v2sigma2, v2sigmalapl,
+            v2sigmatau, v2lapl2, v2lapltau, v2tau2, v3rho3, v3rho2sigma,
+            v3rho2lapl, v3rho2tau, v3rhosigma2, v3rhosigmalapl, v3rhosigmatau,
+            v3rholapl2, v3rholapltau, v3rhotau2, v3sigma3, v3sigma2lapl,
+            v3sigma2tau, v3sigmalapl2, v3sigmalapltau, v3sigmatau2, v3lapl3,
+            v3lapl2tau, v3lapltau2, v3tau3, v4rho4, v4rho3sigma, v4rho3lapl,
+            v4rho3tau, v4rho2sigma2, v4rho2sigmalapl, v4rho2sigmatau,
+            v4rho2lapl2, v4rho2lapltau, v4rho2tau2, v4rhosigma3,
+            v4rhosigma2lapl, v4rhosigma2tau, v4rhosigmalapl2,
+            v4rhosigmalapltau, v4rhosigmatau2, v4rholapl3, v4rholapl2tau,
+            v4rholapltau2, v4rhotau3, v4sigma4, v4sigma3lapl, v4sigma3tau,
+            v4sigma2lapl2, v4sigma2lapltau, v4sigma2tau2, v4sigmalapl3,
+            v4sigmalapl2tau, v4sigmalapltau2, v4sigmatau3, v4lapl4, v4lapl3tau,
+            v4lapl2tau2, v4lapltau3, v4tau4)
 end
