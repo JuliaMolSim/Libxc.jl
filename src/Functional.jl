@@ -4,6 +4,7 @@ Struct for a Libxc functional and some basic information
 mutable struct Functional
     identifier::Symbol
     n_spin::Int
+    name::String
     kind::Symbol
     family::Symbol
     flags::Vector{Symbol}
@@ -47,10 +48,12 @@ function Functional(identifier::Symbol; n_spin::Integer = 1)
         kind     = KINDMAP[xc_func_info_get_kind(funcinfo)]
         family   = FAMILIYMAP[xc_func_info_get_family(funcinfo)]
         flags    = extract_flags(xc_func_info_get_flags(funcinfo))
+        name     = unsafe_string(xc_func_info_get_name(funcinfo))
         dimensions = unsafe_load(pointer).dim
 
         # Make functional and attach finalizer for cleaning up the pointer
-        func = Functional(identifier, n_spin, kind, family, flags, dimensions, pointer)
+        func = Functional(identifier, n_spin, name, kind, family, flags,
+                          dimensions, pointer)
         finalizer(cls -> pointer_cleanup(cls.pointer_), func)
         return func
     catch
@@ -104,7 +107,7 @@ const FLAGMAP = Dict(
 function extract_flags(flags)
     ret = Symbol[]
     for (flag, sym) in pairs(FLAGMAP)
-        flag & flags == 1 && push!(ret, sym)
+        flag & flags > 0 && push!(ret, sym)
     end
     ret
 end

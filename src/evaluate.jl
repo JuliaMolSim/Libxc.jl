@@ -26,29 +26,53 @@ const ARGUMENTS = Dict(
      ],
 )
 const INPUT = Dict(
-    :lda => [[:rho]],
-    :gga => [[:rho, :sigma]],
-    :mgga => [[:rho, :sigma, :lapl_rho, :tau]],
+    :lda => [:rho],
+    :gga => [:rho, :sigma],
+    :mgga => [:rho, :sigma, :lapl, :tau],
 )
+
+function derivative_flag(family, argument)
+    flags = (:vxc, :fxc, :kxc, :lxc)  # flags for having 1st to 4th derivative
+    argument == :zk && return (0, :exc)
+    for (i, arglist) in enumerate(ARGUMENTS[family])
+        if argument in arglist
+            return (i, flags[i])
+        end
+    end
+    return (-1, :unknown)
+end
 
 const LibxcArray = Array{Float64}
 const LibxcOptArray = Union{LibxcArray, Ptr{Nothing}}
 
 
-function evaluate(func::Functional; derivative=1, rho::LibxcArray, kwargs...)
-    @assert 0 ≤ derivative ≤ 4
+"""
+Evaluate a functional and all derivatives of the energy up to order `derivatives`.
+The required input arguments depend on the functional type (`rho` for all functionals,
+`sigma` for GGA and mGGA, `tau` and `lapl` for mGGA). Obtained data is returned
+as a named tuple.
+"""
+function evaluate(func::Functional; derivatives=1, rho::LibxcArray, kwargs...)
+    @assert 0 ≤ derivatives ≤ 4
 
     # If we have an n_spin × size array, keep the shape when allocating output arrays
-    if size(rho, 1) == func.spin_dimensions.rho
-        shape = size(rho)[2:end]
-    else
-        shape = (Int(length(rho) / func.spin_dimensions.rho), )
+    shape = size(rho)
+    if func.spin_dimensions.rho > 1
+        if size(rho, 1) == func.spin_dimensions.rho
+            shape = size(rho)[2:end]
+        else
+            shape = (Int(length(rho) / func.spin_dimensions.rho), )
+        end
     end
 
-    outargs = Dict(:E => similar(rho, shape))
-    for symbol in vcat(ARGUMENTS[func.family][1:derivative]...)
+    outargs = Dict{Symbol, Array}(:zk => similar(rho, shape))
+    for symbol in vcat(ARGUMENTS[func.family][1:derivatives]...)
         n_spin = getfield(func.spin_dimensions, symbol)
-        outargs[symbol] = similar(rho, n_spin, shape...)
+        if n_spin > 1
+            outargs[symbol] = similar(rho, n_spin, shape...)
+        else
+            outargs[symbol] = similar(rho, shape...)
+        end
     end
 
     evaluate!(func; rho=rho, kwargs..., outargs...)
@@ -56,13 +80,33 @@ function evaluate(func::Functional; derivative=1, rho::LibxcArray, kwargs...)
 end
 
 
+"""
+Evaluate a functional and store results in passed arrays. If for a particular
+quantity no array is passed, it is not computed. Required input arguments
+depend on the functional type (`rho` for all functionals, `sigma` for GGA and mGGA,
+`tau` and `lapl` for mGGA).
+"""
 function evaluate!(func::Functional; rho::LibxcArray, kwargs...)
     n_p = Int(length(rho) / func.spin_dimensions.rho)
     kwargs = Dict(kwargs)
-    for symbol in vcat(INPUT[func.family], ARGUMENTS[func.family]...)
-        symbol == :rho && continue
-        n_spin = getfield(func.spin_dimensions, symbol)
-        @assert length(kwargs[symbol]) == n_spin * n_p
+    for argument in vcat(:zk, INPUT[func.family]..., ARGUMENTS[func.family]...)
+        argument == :rho && continue
+        haskey(kwargs, argument) || continue
+
+        # Check dimensionality
+        n_spin = getfield(func.spin_dimensions, argument)
+        if length(kwargs[argument]) != n_spin * n_p
+            throw(DimensionMismatch("$argument should have n_spin * n_p elements " *
+                                    "(n_spin=$n_spin, n_p=$n_p"))
+        end
+
+        # Check derivative support in functional
+        order, flag = derivative_flag(func.family, argument)
+        if !(flag in func.flags) && flag != :unknown
+            throw(ArgumentError("Functional $(func.identifier) does not support " *
+                                "derivatives of order $order (like $argument)."))
+        end
+
     end
     evaluate!(func, Val(func.family); rho=rho, kwargs...)
 end
@@ -74,7 +118,7 @@ function evaluate!(func::Functional, ::Val{:lda};
                    vrho::LibxcOptArray=C_NULL, v2rho2::LibxcOptArray=C_NULL,
                    v3rho3::LibxcOptArray=C_NULL, v4rho4::LibxcOptArray=C_NULL)
     np = Int(length(rho) / func.spin_dimensions.rho)
-    xc_lda(func.pointer, np, rho, zk, vrho, v2rho2, v3rho3, v4rho4)
+    xc_lda(func.pointer_, np, rho, zk, vrho, v2rho2, v3rho3, v4rho4)
 end
 
 
@@ -89,8 +133,8 @@ function evaluate!(func::Functional, ::Val{:gga};
                    v4rho4::LibxcOptArray=C_NULL, v4rho3sigma::LibxcOptArray=C_NULL,
                    v4rho2sigma2::LibxcOptArray=C_NULL, v4rhosigma3::LibxcOptArray=C_NULL,
                    v4sigma4::LibxcOptArray=C_NULL)
-    np = Int(length(ρ) / func.spin_dimensions.rho)
-    xc_gga(p, np, rho, sigma, zk, vrho, vsigma, v2rho2, v2rhosigma, v2sigma2,
+    np = Int(length(rho) / func.spin_dimensions.rho)
+    xc_gga(func.pointer_, np, rho, sigma, zk, vrho, vsigma, v2rho2, v2rhosigma, v2sigma2,
            v3rho3, v3rho2sigma, v3rhosigma2, v3sigma3,
            v4rho4, v4rho3sigma, v4rho2sigma2, v4rhosigma3, v4sigma4)
 end
@@ -99,7 +143,7 @@ end
 
 function evaluate!(func::Functional, ::Val{:mgga};
                    rho::LibxcArray, sigma::LibxcArray,
-                   lapl_rho::LibxcArray, tau::LibxcArray,
+                   lapl::LibxcArray, tau::LibxcArray,
                    zk::LibxcOptArray=C_NULL,
                    vrho::LibxcOptArray=C_NULL,
                    vsigma::LibxcOptArray=C_NULL,
@@ -170,8 +214,8 @@ function evaluate!(func::Functional, ::Val{:mgga};
                    v4lapl2tau2::LibxcOptArray=C_NULL,
                    v4lapltau3::LibxcOptArray=C_NULL,
                    v4tau4::LibxcOptArray=C_NULL)
-    np = Int(length(ρ) / func.spin_dimensions.rho)
-    xc_mgga(p, np, rho, sigma, lapl_rho, tau, zk, vrho, vsigma, vlapl, vtau,
+    np = Int(length(rho) / func.spin_dimensions.rho)
+    xc_mgga(func.pointer_, np, rho, sigma, lapl, tau, zk, vrho, vsigma, vlapl, vtau,
             v2rho2, v2rhosigma, v2rholapl, v2rhotau, v2sigma2, v2sigmalapl,
             v2sigmatau, v2lapl2, v2lapltau, v2tau2, v3rho3, v3rho2sigma,
             v3rho2lapl, v3rho2tau, v3rhosigma2, v3rhosigmalapl, v3rhosigmatau,
