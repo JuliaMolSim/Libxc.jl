@@ -1,14 +1,16 @@
 # The required / allowed input and output arguments per functional family
 # :input refers to input argument and numbers to the derivative order
 const ARGUMENTS = Dict(
-    :lda => [[:vrho], [:v2rho2], [:v3rho3], [:v4rho4], ],
+    :lda => [[:zk], [:vrho], [:v2rho2], [:v3rho3], [:v4rho4], ],
     :gga => [
+        [:zk],
         [:vrho, :vsigma],
         [:v2rho2, :v2rhosigma, :v2sigma2],
         [:v3rho3, :v3rho2sigma, :v3rhosigma2, :v3sigma3],
         [:v4rho4, :v4rho3sigma, :v4rho2sigma2, :v4rhosigma3, :v4sigma4],
     ],
     :mgga => [
+        [:zk],
         [:vrho, :vsigma, :vlapl, :vtau],
         [:v2rho2, :v2rhosigma, :v2rholapl, :v2rhotau, :v2sigma2, :v2sigmalapl,
          :v2sigmatau, :v2lapl2, :v2lapltau, :v2tau2],
@@ -32,24 +34,25 @@ const INPUT = Dict(
 )
 
 function derivative_flag(family, argument)
-    flags = (:vxc, :fxc, :kxc, :lxc)  # flags for having 1st to 4th derivative
-    argument == :zk && return (0, :exc)
+    flags = (:exc, :vxc, :fxc, :kxc, :lxc)  # flags for having 0th to 4th derivative
     for (i, arglist) in enumerate(ARGUMENTS[family])
-        if argument in arglist
-            return (i, flags[i])
-        end
+        (argument in arglist) && return (i - 1, flags[i])
     end
-    return (-1, :unknown)
+    (-1, :unknown)
 end
 
 """
-Evaluate a functional and all derivatives of the energy up to order `derivatives`.
+Evaluate a functional obtaining the energy and / or certain derivatives of it.
+What is returned depends on `derivatives`, which should be a range of derivative
+orders, e.g. `0:1` (the default) for the energy and potential, `0:0` for just the
+energy and so on.
 The required input arguments depend on the functional type (`rho` for all functionals,
 `sigma` for GGA and mGGA, `tau` and `lapl` for mGGA). Obtained data is returned
 as a named tuple.
 """
-function evaluate(func::Functional; derivatives=1, rho::AbstractArray, kwargs...)
-    @assert 0 ≤ derivatives ≤ 4
+function evaluate(func::Functional; derivatives=0:1, rho::AbstractArray, kwargs...)
+    derivatives isa Number && (derivatives = 0:derivatives)
+    @assert all(0 .≤ derivatives .≤ 4)
 
     # If we have an n_spin × size array, keep the shape when allocating output arrays
     shape = size(rho)
@@ -61,9 +64,10 @@ function evaluate(func::Functional; derivatives=1, rho::AbstractArray, kwargs...
         end
     end
 
+    # Output arguments, where memory is already allocated
     outargs_allocated = Dict{Symbol, AbstractArray}()
     outargs = Dict{Symbol, AbstractArray}()
-    for symbol in vcat(:zk, ARGUMENTS[func.family][1:derivatives]...)
+    for symbol in vcat(ARGUMENTS[func.family][1 .+ derivatives]...)
         if symbol in keys(kwargs)
             outargs_allocated[symbol] = kwargs[symbol]
         else
@@ -90,7 +94,7 @@ depend on the functional type (`rho` for all functionals, `sigma` for GGA and mG
 function evaluate!(func::Functional; rho::AbstractArray, kwargs...)
     n_p = Int(length(rho) / func.spin_dimensions.rho)
     kwargs = Dict(kwargs)
-    for argument in vcat(:zk, INPUT[func.family]..., ARGUMENTS[func.family]...)
+    for argument in vcat(INPUT[func.family]..., ARGUMENTS[func.family]...)
         argument == :rho && continue
         haskey(kwargs, argument) || continue
 
