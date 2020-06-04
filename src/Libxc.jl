@@ -2,15 +2,16 @@ module Libxc
 using Libxc_jll
 const libxc = Libxc_jll.libxc
 
-include("version.jl")
-include("xc.jl")
-include("functionals_info.jl")
-
-export Functional
+include("gen/libxc_common.jl")
+include("gen/libxc.jl")
+include("wrapper.jl")
 include("Functional.jl")
-
-export evaluate_lda!
-export evaluate_gga!
 include("evaluate.jl")
+
+const libxc_version = xc_version()
+export available_functionals
+export Functional
+export evaluate
+export evaluate!
 
 end # module
