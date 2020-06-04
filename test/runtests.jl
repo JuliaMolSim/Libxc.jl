@@ -162,5 +162,21 @@ end
     @test_throws DimensionMismatch evaluate!(func, rho=rho, zk=randn(2))
 end
 
+@testset "Custom evaluate! dispatch" begin
+    # A dummy version of Slater exchange for Float32
+    function Libxc.evaluate!(func::Functional, ::Val{:lda}, rho::Array{Float32};
+                             zk::Array{Float32})
+        @assert func.identifier == :lda_x
+        @. zk = -Float32(3/4) * cbrt(Float32(3/π) * rho)
+    end
+    rho = Float32[0.1, 0.2, 0.3, 0.4, 0.5]
+    result = zeros(Float32, 5)
+    func = Functional(:lda_x)
+
+    res = evaluate(func, rho=rho, derivatives=0)
+    @test eltype(res.zk) == Float32
+    @test eltype(res.zk) == Float32
+    @test res.zk ≈ [-0.342809, -0.431912, -0.494416, -0.544175, -0.586194] atol=1e-5
+end
 
 end  # outer wrapper

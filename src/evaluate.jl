@@ -42,17 +42,13 @@ function derivative_flag(family, argument)
     return (-1, :unknown)
 end
 
-const LibxcArray = Array{Float64}
-const LibxcOptArray = Union{LibxcArray, Ptr{Nothing}}
-
-
 """
 Evaluate a functional and all derivatives of the energy up to order `derivatives`.
 The required input arguments depend on the functional type (`rho` for all functionals,
 `sigma` for GGA and mGGA, `tau` and `lapl` for mGGA). Obtained data is returned
 as a named tuple.
 """
-function evaluate(func::Functional; derivatives=1, rho::LibxcArray, kwargs...)
+function evaluate(func::Functional; derivatives=1, rho::AbstractArray, kwargs...)
     @assert 0 ≤ derivatives ≤ 4
 
     # If we have an n_spin × size array, keep the shape when allocating output arrays
@@ -65,7 +61,7 @@ function evaluate(func::Functional; derivatives=1, rho::LibxcArray, kwargs...)
         end
     end
 
-    outargs = Dict{Symbol, Array}(:zk => similar(rho, shape))
+    outargs = Dict{Symbol, AbstractArray}(:zk => similar(rho, shape))
     for symbol in vcat(ARGUMENTS[func.family][1:derivatives]...)
         n_spin = getfield(func.spin_dimensions, symbol)
         if n_spin > 1
@@ -86,7 +82,7 @@ quantity no array is passed, it is not computed. Required input arguments
 depend on the functional type (`rho` for all functionals, `sigma` for GGA and mGGA,
 `tau` and `lapl` for mGGA).
 """
-function evaluate!(func::Functional; rho::LibxcArray, kwargs...)
+function evaluate!(func::Functional; rho::AbstractArray, kwargs...)
     n_p = Int(length(rho) / func.spin_dimensions.rho)
     kwargs = Dict(kwargs)
     for argument in vcat(:zk, INPUT[func.family]..., ARGUMENTS[func.family]...)
@@ -108,12 +104,18 @@ function evaluate!(func::Functional; rho::LibxcArray, kwargs...)
         end
 
     end
-    evaluate!(func, Val(func.family); rho=rho, kwargs...)
+    evaluate!(func, Val(func.family), rho; kwargs...)
 end
 
 
-function evaluate!(func::Functional, ::Val{:lda};
-                   rho::LibxcArray,
+# Array typedefs specifically to the Array type supported in Libxc
+# Allows providing special versions of evaluate! for other types of arrays.
+# Dispatch can be done on the rho argument, which is not a kwarg in this function.
+const LibxcArray = Array{Float64}
+const LibxcOptArray = Union{LibxcArray, Ptr{Nothing}}
+
+
+function evaluate!(func::Functional, ::Val{:lda}, rho::LibxcArray;
                    zk::LibxcOptArray=C_NULL,
                    vrho::LibxcOptArray=C_NULL, v2rho2::LibxcOptArray=C_NULL,
                    v3rho3::LibxcOptArray=C_NULL, v4rho4::LibxcOptArray=C_NULL)
@@ -122,8 +124,7 @@ function evaluate!(func::Functional, ::Val{:lda};
 end
 
 
-function evaluate!(func::Functional, ::Val{:gga};
-                   rho::LibxcArray, sigma::LibxcArray,
+function evaluate!(func::Functional, ::Val{:gga}, rho::LibxcArray; sigma::LibxcArray,
                    zk::LibxcOptArray=C_NULL,
                    vrho::LibxcOptArray=C_NULL, vsigma::LibxcOptArray=C_NULL,
                    v2rho2::LibxcOptArray=C_NULL, v2rhosigma::LibxcOptArray=C_NULL,
@@ -141,9 +142,8 @@ end
 
 
 
-function evaluate!(func::Functional, ::Val{:mgga};
-                   rho::LibxcArray, sigma::LibxcArray,
-                   lapl::LibxcArray, tau::LibxcArray,
+function evaluate!(func::Functional, ::Val{:mgga}, rho::LibxcArray;
+                   sigma::LibxcArray, lapl::LibxcArray, tau::LibxcArray,
                    zk::LibxcOptArray=C_NULL,
                    vrho::LibxcOptArray=C_NULL,
                    vsigma::LibxcOptArray=C_NULL,
