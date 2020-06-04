@@ -108,7 +108,7 @@ end
 
     # LSDA
     for sym in (:lda_x, :lda_c_vwn)
-        res = evaluate(Functional(sym, n_spin=1), rho=rho)
+        res = evaluate(Functional(sym, n_spin=1), rho=rho, zk=zeros(shape))
         @test size(res.zk) == shape
         @test size(res.vrho) == shape
 

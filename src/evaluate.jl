@@ -61,18 +61,23 @@ function evaluate(func::Functional; derivatives=1, rho::AbstractArray, kwargs...
         end
     end
 
-    outargs = Dict{Symbol, AbstractArray}(:zk => similar(rho, shape))
-    for symbol in vcat(ARGUMENTS[func.family][1:derivatives]...)
-        n_spin = getfield(func.spin_dimensions, symbol)
-        if n_spin > 1
-            outargs[symbol] = similar(rho, n_spin, shape...)
+    outargs_allocated = Dict{Symbol, AbstractArray}()
+    outargs = Dict{Symbol, AbstractArray}()
+    for symbol in vcat(:zk, ARGUMENTS[func.family][1:derivatives]...)
+        if symbol in keys(kwargs)
+            outargs_allocated[symbol] = kwargs[symbol]
         else
-            outargs[symbol] = similar(rho, shape...)
+            n_spin = getfield(func.spin_dimensions, symbol)
+            if n_spin > 1
+                outargs[symbol] = similar(rho, n_spin, shape...)
+            else
+                outargs[symbol] = similar(rho, shape)
+            end
         end
     end
 
     evaluate!(func; rho=rho, kwargs..., outargs...)
-    (; outargs...)
+    (; outargs..., outargs_allocated...)
 end
 
 
