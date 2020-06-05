@@ -51,7 +51,6 @@ The required input arguments depend on the functional type (`rho` for all functi
 as a named tuple.
 """
 function evaluate(func::Functional; derivatives=0:1, rho::AbstractArray, kwargs...)
-    derivatives isa Number && (derivatives = 0:derivatives)
     @assert all(0 .≤ derivatives .≤ 4)
 
     # If we have an n_spin × size array, keep the shape when allocating output arrays
