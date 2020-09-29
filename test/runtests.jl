@@ -98,35 +98,34 @@ end
 
 @testset "LDA / GGA evaluate with spin" begin
     shape = (2, 3, 4)
-    rho = abs.(randn(shape))
-    sigma = abs.(randn(shape))
+    rho   = reshape(abs.(randn(shape)), 1, shape...)
+    sigma = reshape(abs.(randn(shape)), 1, shape...)
 
     # Duplicate rho and sigma for spin = 2 tests
-    rho2 = 0.5vcat(reshape(rho, 1, shape...), reshape(rho, 1, shape...))
-    sigma2 = 0.25vcat(reshape(sigma, 1, shape...), reshape(sigma, 1, shape...),
-                      reshape(sigma, 1, shape...))
+    rho2 = 0.5vcat(rho, rho)
+    sigma2 = 0.25vcat(sigma, sigma, sigma)
 
     # LSDA
     for sym in (:lda_x, :lda_c_vwn)
         res = evaluate(Functional(sym, n_spin=1), rho=rho, zk=zeros(shape))
         @test size(res.zk) == shape
-        @test size(res.vrho) == shape
+        @test size(res.vrho) == (1, shape...)
 
         res2 = evaluate(Functional(sym, n_spin=2), rho=rho2)
         @test size(res2.zk) == shape
         @test size(res2.vrho) == (2, shape...)
 
         @test res.zk ≈ res2.zk
-        @test res.vrho ≈ res2.vrho[1, :, :, :]
-        @test res.vrho ≈ res2.vrho[2, :, :, :]
+        @test res.vrho[1, :, :, :] ≈ res2.vrho[1, :, :, :]
+        @test res.vrho[1, :, :, :] ≈ res2.vrho[2, :, :, :]
     end
 
     # GGA
     for sym in (:gga_x_pbe, :gga_c_pbe)
         res = evaluate(Functional(sym, n_spin=1), rho=rho, sigma=sigma)
         @test size(res.zk) == shape
-        @test size(res.vrho) == shape
-        @test size(res.vsigma) == shape
+        @test size(res.vrho) == (1, shape...)
+        @test size(res.vsigma) == (1, shape...)
 
         res2 = evaluate(Functional(sym, n_spin=2), rho=rho2, sigma=sigma2)
         @test size(res2.zk) == shape
@@ -134,9 +133,9 @@ end
         @test size(res2.vsigma) == (3, shape...)
 
         @test res.zk ≈ res2.zk
-        @test res.vrho ≈ res2.vrho[1, :, :, :]
-        @test res.vrho ≈ res2.vrho[2, :, :, :]
-        @test 4res.vsigma ≈ dropdims(sum(res2.vsigma, dims=1), dims=1)
+        @test res.vrho[1, :, :, :] ≈ res2.vrho[1, :, :, :]
+        @test res.vrho[1, :, :, :] ≈ res2.vrho[2, :, :, :]
+        @test 4res.vsigma ≈ sum(res2.vsigma, dims=1)
     end
 end
 

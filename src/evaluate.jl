@@ -53,14 +53,19 @@ as a named tuple.
 function evaluate(func::Functional; derivatives=0:1, rho::AbstractArray, kwargs...)
     @assert all(0 .≤ derivatives .≤ 4)
 
-    # If we have an n_spin × size array, keep the shape when allocating output arrays
-    shape = size(rho)
-    if func.spin_dimensions.rho > 1
-        if size(rho, 1) == func.spin_dimensions.rho
-            shape = size(rho)[2:end]
-        else
-            shape = (Int(length(rho) / func.spin_dimensions.rho), )
+    # Determine the gridshape (i.e. the shape of the grid points without the spin components)
+    if ndims(rho) > 1
+        if size(rho, 1) != func.spin_dimensions.rho
+            error("First axis for multidimensional rho array should be equal " *
+                  "to the number of spin components (== $(func.spin_dimensions.rho))")
         end
+        gridshape = size(rho)[2:end]
+    else
+        if mod(length(rho), func.spin_dimensions.rho) != 0
+            error("Length of linear rho array should be divisible by number of spin " *
+                  "components in rho (== $(func.spin_dimensions.rho)).")
+        end
+        gridshape = (Int(length(rho) / func.spin_dimensions.rho), )
     end
 
     # Output arguments, where memory is already allocated
@@ -69,13 +74,11 @@ function evaluate(func::Functional; derivatives=0:1, rho::AbstractArray, kwargs.
     for symbol in vcat(ARGUMENTS[func.family][1 .+ derivatives]...)
         if symbol in keys(kwargs)
             outargs_allocated[symbol] = kwargs[symbol]
+        elseif symbol == :zk  # For zk keep just the grid shape
+            outargs[symbol] = similar(rho, gridshape)
         else
             n_spin = getfield(func.spin_dimensions, symbol)
-            if n_spin > 1
-                outargs[symbol] = similar(rho, n_spin, shape...)
-            else
-                outargs[symbol] = similar(rho, shape)
-            end
+            outargs[symbol] = similar(rho, n_spin, gridshape...)
         end
     end
 
@@ -91,6 +94,11 @@ depend on the functional type (`rho` for all functionals, `sigma` for GGA and mG
 `tau` and `lapl` for mGGA).
 """
 function evaluate!(func::Functional; rho::AbstractArray, kwargs...)
+    mod(length(rho), func.spin_dimensions.rho) != 0 && error(
+        "Length of rho array should be divisible by number of spin " *
+        "components in rho (== $(func.spin_dimensions.rho))."
+    )
+
     n_p = Int(length(rho) / func.spin_dimensions.rho)
     kwargs = Dict(kwargs)
     for argument in vcat(INPUT[func.family]..., ARGUMENTS[func.family]...)
