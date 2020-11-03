@@ -178,4 +178,10 @@ end
     @test res.zk ≈ [-0.342809, -0.431912, -0.494416, -0.544175, -0.586194] atol=1e-5
 end
 
+@testset "Setting functional properties" begin
+    lda = Functional(:lda_x, n_spin=2)
+    lda.density_threshold = 1e-4
+    @test lda.density_threshold == 1e-4
+end
+
 end  # outer wrapper

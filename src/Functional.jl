@@ -16,7 +16,6 @@ mutable struct Functional
 
     # Pointer holding the Libxc representation of this functional
     pointer_::Ptr{xc_func_type}
-
 end
 
 
@@ -59,6 +58,28 @@ function Functional(identifier::Symbol; n_spin::Integer = 1)
     catch
         pointer_cleanup(pointer)
         rethrow()
+    end
+end
+
+import Base.getproperty, Base.setproperty!, Base.propertynames
+function Base.propertynames(func::Functional, private=false)
+    ret = [:density_threshold, ]
+    append!(ret, fieldnames(Functional))
+end
+
+function getproperty(func::Functional, s::Symbol)
+    if s == :density_threshold
+        return Float64(unsafe_load(func.pointer_).dens_threshold)
+    else
+        getfield(func, s)
+    end
+end
+
+function setproperty!(func::Functional, s::Symbol, v)
+    if s == :density_threshold
+        xc_func_set_dens_threshold(func.pointer_, Cdouble(v))
+    else
+        error("Setting property $s not implemented.")
     end
 end
 
