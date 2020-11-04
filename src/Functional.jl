@@ -8,6 +8,7 @@ mutable struct Functional
     kind::Symbol
     family::Symbol
     flags::Vector{Symbol}
+    references::Vector  # Related article references as list of named tuples
 
     # Spin dimensions libxc expects for various quantities
     # Note: Only the symbols actually meaningful for this functional
@@ -16,7 +17,6 @@ mutable struct Functional
 
     # Pointer holding the Libxc representation of this functional
     pointer_::Ptr{xc_func_type}
-
 end
 
 
@@ -49,16 +49,87 @@ function Functional(identifier::Symbol; n_spin::Integer = 1)
         family   = FAMILIYMAP[xc_func_info_get_family(funcinfo)]
         flags    = extract_flags(xc_func_info_get_flags(funcinfo))
         name     = unsafe_string(xc_func_info_get_name(funcinfo))
+        references = extract_references(funcinfo)
         dimensions = unsafe_load(pointer).dim
 
         # Make functional and attach finalizer for cleaning up the pointer
         func = Functional(identifier, n_spin, name, kind, family, flags,
-                          dimensions, pointer)
+                          references, dimensions, pointer)
         finalizer(cls -> pointer_cleanup(cls.pointer_), func)
         return func
     catch
         pointer_cleanup(pointer)
         rethrow()
+    end
+end
+
+"""Is the functional an LDA or hybrid LDA functional"""
+is_lda(func::Functional)    = func.family in (:lda, :hyb_lda)
+
+"""Is the functional a GGA or hybrid GGA functional"""
+is_gga(func::Functional)    = func.family in (:gga, :hyb_gga)
+
+"""Is the functional a meta-GGA or hybrid meta-GGA functional"""
+is_mgga(func::Functional)   = func.family in (:mgga, :hyb_mgga)
+
+"""Is the functional a hybrid functional (global or range-separated)"""
+is_hybrid(func::Functional) = func.family in (:hyb_gga, :hyb_lda, :hyb_mgga)
+
+"""Is the functional a VV10-type non-local density functional"""
+is_vv10(func::Functional)   = :vv10 in func.flags
+
+"""Is the functional a range-separated hybrid functional"""
+function is_range_separated(func::Functional)
+    is_hybrid(func) || return false
+    any(flag in (:hyb_cam, :hyb_camy, :hyb_lc, :hyb_lcy) for flag in func.flags)
+end
+
+"""Is the functional a global hybrid functional"""
+is_global_hybrid(func::Functional) = is_hybrid(func) && !is_range_separated(func)
+
+
+# Supported properties:
+#     - density_threshold  Density cutoff
+#     - exx_coefficient    Exact exchange for global hybrid functionals
+#     - cam_omega          Range separation constant for range-separated hybrids
+#     - cam_alpha          Long-range exact exchange for range-separated hybrids
+#     - cam_beta           Additional exchange for short-range for range-separated hybrids
+#                          (i.e. short-range exact exchange is cam_alpha + cam_beta)
+#     - nlc_b              Parameter for the VV10-type functionals
+#     - nlc_C              Parameter for the VV10-type functionals
+
+import Base.getproperty, Base.setproperty!, Base.propertynames
+function Base.propertynames(func::Functional, private=false)
+    ret = [:density_threshold, :exx_coefficient,
+           :cam_alpha, :cam_beta, :cam_omega, :nlc_b, :nlc_C]
+    append!(ret, fieldnames(Functional))
+end
+
+function Base.getproperty(func::Functional, s::Symbol)
+    if s == :density_threshold
+        return Float64(unsafe_load(func.pointer_).dens_threshold)
+    elseif s == :exx_coefficient
+        return is_global_hybrid(func) ? Float64(xc_hyb_exx_coef(func.pointer_)) : nothing
+    elseif s in (:cam_alpha, :cam_beta, :cam_omega)
+        is_range_separated(func) || return nothing
+        data = (cam_omega = Ref(0.0), cam_alpha = Ref(0.0), cam_beta  = Ref(0.0))
+        xc_hyb_cam_coef(func.pointer_, data.cam_omega, data.cam_alpha, data.cam_beta)
+        return getproperty(data, s)[]
+    elseif s in (:nlc_b, :nlc_C)
+        is_vv10(func) || return nothing
+        data = (nlc_b=Ref(0.0), nlc_C=Ref(0.0))
+        xc_nlc_coef(func.pointer_, data.nlc_b, data.nlc_C)
+        return getproperty(data, s)[]
+    else
+        getfield(func, s)
+    end
+end
+
+function Base.setproperty!(func::Functional, s::Symbol, v)
+    if s == :density_threshold
+        xc_func_set_dens_threshold(func.pointer_, Cdouble(v))
+    else
+        error("Setting property $s is not allowed or implemented.")
     end
 end
 
@@ -110,4 +181,17 @@ function extract_flags(flags)
         flag & flags > 0 && push!(ret, sym)
     end
     ret
+end
+
+function extract_references(info::Ptr{xc_func_info_type})
+    # Range of set references
+    refrange = filter(iref -> xc_func_info_get_references(info, iref) != C_NULL,
+                      0:XC_MAX_REFERENCES - 1)
+
+    map(refrange) do iref
+        ref_ptr = xc_func_info_get_references(info, iref)
+        (reference=unsafe_string(xc_func_reference_get_ref(ref_ptr)),
+         doi=unsafe_string(xc_func_reference_get_doi(ref_ptr)),
+         bibtex=unsafe_string(xc_func_reference_get_bibtex(ref_ptr)))
+    end
 end
