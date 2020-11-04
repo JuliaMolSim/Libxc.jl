@@ -10,7 +10,7 @@ end
 
 @testset "Functional list" begin
     available = available_functionals()
-    @test :lda_x in available
+    @test :lda_x     in available
     @test :lda_c_vwn in available
     @test :lda_xc_teter93 in available
     @test :gga_x_pbe in available
@@ -19,6 +19,9 @@ end
 
 @testset "Functional construction" begin
     lda = Functional(:lda_x, n_spin=2)
+    @test is_lda(lda)
+    @test !is_gga(lda)
+    @test !is_mgga(lda)
     @test lda.family == :lda
     @test sort(lda.flags) == sort([:vxc, :dim3, :fxc, :exc])
     @test lda.kind == :exchange
@@ -37,8 +40,8 @@ end
     @test result ≈ [-0.342809, -0.431912, -0.494416, -0.544175, -0.586194] atol=1e-5
 
     # GGA
-    lda_x = Functional(:gga_x_pbe)
-    result = evaluate(lda_x, rho=rho, sigma=sigma, derivatives=0).zk
+    gga_x = Functional(:gga_x_pbe)
+    result = evaluate(gga_x, rho=rho, sigma=sigma, derivatives=0).zk
     @test result ≈ [-0.452598, -0.478878, -0.520674, -0.561428, -0.598661] atol=1e-5
 end
 
