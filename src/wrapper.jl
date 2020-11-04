@@ -1,4 +1,4 @@
-# Some convenience wrappers 
+# Some convenience wrappers
 
 """Get the version of the libxc library as a version string"""
 function xc_version()
