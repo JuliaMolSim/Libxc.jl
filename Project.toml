@@ -1,7 +1,7 @@
 name = "Libxc"
 uuid = "66e17ffc-8502-11e9-23b5-c9248d0eb96d"
 authors = ["Jason Eu <morty.yu@yahoo.com>", "Michael F. Herbst <info@michael-herbst.com>"]
-version = "0.3.4"
+version = "0.3.5"
 
 [deps]
 Libxc_jll = "a56a6d9d-ad03-58af-ab61-878bf78270d6"
