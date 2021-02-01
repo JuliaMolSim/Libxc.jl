@@ -1,7 +1,11 @@
 using Clang
 
+if !isfile(joinpath(@__DIR__, "../Project.toml"))
+    error("Run from scripts directory.")
+end
+
 # Download libxc sources
-LIBXC_VERSION = "5.0.0"
+LIBXC_VERSION = "5.1.0"
 if !isfile(joinpath(@__DIR__, "libxc/src/xc.h"))
     download("https://gitlab.com/libxc/libxc/-/archive/$LIBXC_VERSION/" *
              "libxc-$LIBXC_VERSION.tar.gz", "libxc.tar.gz")

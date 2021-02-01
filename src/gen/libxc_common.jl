@@ -161,4 +161,7 @@ struct xc_func_type
     dim::xc_dimensions
     params::Ptr{Cvoid}
     dens_threshold::Cdouble
+    zeta_threshold::Cdouble
+    sigma_threshold::Cdouble
+    tau_threshold::Cdouble
 end

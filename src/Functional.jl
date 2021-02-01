@@ -89,7 +89,11 @@ is_global_hybrid(func::Functional) = is_hybrid(func) && !is_range_separated(func
 
 
 # Supported properties:
-#     - density_threshold  Density cutoff
+#     - density_threshold  Density threshold below which functional will not be evaluated
+#     - zeta_threshold     Spin polarization threshold below which spin components
+#                          will not be evaluated
+#     - sigma_threshold    Enforced lower bound for σ = √γ, smaller values get overwritten
+#     - tau_threshold      Enforced lower bound for τ, smaller values get overwritten
 #     - exx_coefficient    Exact exchange for global hybrid functionals
 #     - cam_omega          Range separation constant for range-separated hybrids
 #     - cam_alpha          Long-range exact exchange for range-separated hybrids
@@ -100,14 +104,16 @@ is_global_hybrid(func::Functional) = is_hybrid(func) && !is_range_separated(func
 
 import Base.getproperty, Base.setproperty!, Base.propertynames
 function Base.propertynames(func::Functional, private=false)
-    ret = [:density_threshold, :exx_coefficient,
-           :cam_alpha, :cam_beta, :cam_omega, :nlc_b, :nlc_C]
+    ret = [:density_threshold, :zeta_threshold, :sigma_threshold, :tau_threshold,
+           :exx_coefficient, :cam_alpha, :cam_beta, :cam_omega, :nlc_b, :nlc_C]
     append!(ret, fieldnames(Functional))
 end
 
 function Base.getproperty(func::Functional, s::Symbol)
     if s == :density_threshold
         return Float64(unsafe_load(func.pointer_).dens_threshold)
+    elseif s in (:zeta_threshold, :sigma_threshold, :tau_threshold)
+        return Float64(getproperty(unsafe_load(func.pointer_), s))
     elseif s == :exx_coefficient
         return is_global_hybrid(func) ? Float64(xc_hyb_exx_coef(func.pointer_)) : nothing
     elseif s in (:cam_alpha, :cam_beta, :cam_omega)
@@ -126,8 +132,15 @@ function Base.getproperty(func::Functional, s::Symbol)
 end
 
 function Base.setproperty!(func::Functional, s::Symbol, v)
-    if s == :density_threshold
-        xc_func_set_dens_threshold(func.pointer_, Cdouble(v))
+    setmap = Dict(
+        :density_threshold => xc_func_set_dens_threshold,
+        :zeta_threshold    => xc_func_set_zeta_threshold,
+        :sigma_threshold   => xc_func_set_sigma_threshold,
+        :tau_threshold     => xc_func_set_tau_threshold,
+    )
+    if s in keys(setmap)
+        v < 0 && error("Threshold values cannot be negative.")
+        setmap[s](func.pointer_, Cdouble(v))
     else
         error("Setting property $s is not allowed or implemented.")
     end

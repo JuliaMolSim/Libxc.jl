@@ -2,6 +2,14 @@
 # Automatically generated using Clang.jl
 
 
+function xc_reference()
+    ccall((:xc_reference, libxc), Cstring, ())
+end
+
+function xc_reference_doi()
+    ccall((:xc_reference_doi, libxc), Cstring, ())
+end
+
 function xc_version(major, minor, micro)
     ccall((:xc_version, libxc), Cvoid, (Ptr{Cint}, Ptr{Cint}, Ptr{Cint}), major, minor, micro)
 end
@@ -86,6 +94,10 @@ function xc_available_functional_numbers(list)
     ccall((:xc_available_functional_numbers, libxc), Cvoid, (Ptr{Cint},), list)
 end
 
+function xc_available_functional_numbers_by_name(list)
+    ccall((:xc_available_functional_numbers_by_name, libxc), Cvoid, (Ptr{Cint},), list)
+end
+
 function xc_available_functional_names(list)
     ccall((:xc_available_functional_names, libxc), Cvoid, (Ptr{Cstring},), list)
 end
@@ -110,8 +122,20 @@ function xc_func_get_info(p)
     ccall((:xc_func_get_info, libxc), Ptr{xc_func_info_type}, (Ptr{xc_func_type},), p)
 end
 
-function xc_func_set_dens_threshold(p, dens_threshold)
-    ccall((:xc_func_set_dens_threshold, libxc), Cvoid, (Ptr{xc_func_type}, Cdouble), p, dens_threshold)
+function xc_func_set_dens_threshold(p, t_dens)
+    ccall((:xc_func_set_dens_threshold, libxc), Cvoid, (Ptr{xc_func_type}, Cdouble), p, t_dens)
+end
+
+function xc_func_set_zeta_threshold(p, t_zeta)
+    ccall((:xc_func_set_zeta_threshold, libxc), Cvoid, (Ptr{xc_func_type}, Cdouble), p, t_zeta)
+end
+
+function xc_func_set_sigma_threshold(p, t_sigma)
+    ccall((:xc_func_set_sigma_threshold, libxc), Cvoid, (Ptr{xc_func_type}, Cdouble), p, t_sigma)
+end
+
+function xc_func_set_tau_threshold(p, t_tau)
+    ccall((:xc_func_set_tau_threshold, libxc), Cvoid, (Ptr{xc_func_type}, Cdouble), p, t_tau)
 end
 
 function xc_func_set_ext_params(p, ext_params)
