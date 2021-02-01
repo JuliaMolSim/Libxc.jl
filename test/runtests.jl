@@ -4,8 +4,9 @@ using Libxc
 # Wrap in an outer testset to get a full report if one test fails
 @testset "Libxc.jl" begin
 
-@testset "Version" begin
-    @test isa(Libxc.xc_version(), VersionNumber)
+@testset "Metadata" begin
+    @test Libxc.libxc_version ≥ v"5.1.0"
+    @test Libxc.libxc_doi isa AbstractString
 end
 
 @testset "Functional list" begin
@@ -188,12 +189,20 @@ end
     @test lda.references[2].doi  == "10.1007/BF01340281"
 end
 
-@testset "Setting density threshold" begin
+@testset "Setting thresholds" begin
     lda = Functional(:lda_x)
+
     lda.density_threshold = 1e-4
     @test lda.density_threshold == 1e-4
     lda.density_threshold = 1e-6
     @test lda.density_threshold == 1e-6
+
+    for field in (:zeta_threshold, :sigma_threshold, :tau_threshold)
+        setproperty!(lda, field, 1e-4)
+        @test getproperty(lda, field) == 1e-4
+        setproperty!(lda, field, 1e-6)
+        @test getproperty(lda, field) == 1e-6
+    end
 end
 
 @testset "Read-only properties" begin
