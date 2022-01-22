@@ -87,6 +87,9 @@ end
 """Is the functional a global hybrid functional"""
 is_global_hybrid(func::Functional) = is_hybrid(func) && !is_range_separated(func)
 
+"""Does the function need the laplacian of the density"""
+needs_laplacian(func::Functional) = :needs_laplacian in func.flags
+
 
 # Supported properties:
 #     - density_threshold  Density threshold below which functional will not be evaluated
@@ -103,7 +106,7 @@ is_global_hybrid(func::Functional) = is_hybrid(func) && !is_range_separated(func
 #     - nlc_C              Parameter for the VV10-type functionals
 
 import Base.getproperty, Base.setproperty!, Base.propertynames
-function Base.propertynames(func::Functional, private=false)
+function Base.propertynames(func::Functional, private::Bool=false)
     ret = [:density_threshold, :zeta_threshold, :sigma_threshold, :tau_threshold,
            :exx_coefficient, :cam_alpha, :cam_beta, :cam_omega, :nlc_b, :nlc_C]
     append!(ret, fieldnames(Functional))

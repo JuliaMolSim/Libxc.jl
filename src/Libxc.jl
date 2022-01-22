@@ -31,5 +31,6 @@ end
 export available_functionals
 export Functional, evaluate, evaluate!
 export is_lda, is_gga, is_mgga, is_hybrid, is_vv10, is_range_separated, is_global_hybrid
+export needs_laplacian
 
 end # module
