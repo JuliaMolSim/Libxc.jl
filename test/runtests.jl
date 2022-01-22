@@ -143,16 +143,33 @@ end
     end
 end
 
-@testset "mGGA evaluate!" begin
-    rho = [0.1, 0.2, 0.3, 0.4, 0.5]
-    sigma = [0.2, 0.3, 0.4, 0.5, 0.6]
-    lapl = [-0.2, -0.3, -0.4, -0.5, -0.6]
-    tau = [0.5, 0.4, 0.3, 0.2, 0.1]
+@testset "mGGA evaluate! without Laplacian" begin
+    rho    = [0.1, 0.2, 0.3, 0.4, 0.5]
+    sigma  = [0.2, 0.3, 0.4, 0.5, 0.6]
+    tau    = [0.5, 0.4, 0.3, 0.2, 0.1]
     result = zeros(Float64, 5)
 
     tpss_x = Functional(:mgga_x_tpss, n_spin=1)
-    evaluate!(tpss_x, rho=rho, sigma=sigma, lapl=lapl, tau=tau, zk=result)
+    evaluate!(tpss_x, rho=rho, sigma=sigma, tau=tau, zk=result)
     @test result ≈ [-0.4254894, -0.4685985, -0.5341998, -0.6017734, -0.6646443] atol=1e-6
+end
+
+@testset "mGGA evaluate! with Laplacian" begin
+    rho    = [0.1, 0.2, 0.3, 0.4, 0.5]
+    sigma  = [0.2, 0.3, 0.4, 0.5, 0.6]
+    lapl   = [-0.2, -0.3, -0.4, -0.5, -0.6]
+    tau    = [0.5, 0.4, 0.3, 0.2, 0.1]
+    vrho   = randn(Float64, 5)
+    vsigma = randn(Float64, 5)
+    vtau   = randn(Float64, 5)
+    vlapl  = randn(Float64, 5)
+
+    tpss_x = Functional(:mgga_x_tb09, n_spin=1)
+    evaluate!(tpss_x; rho, sigma, lapl, tau, vrho, vsigma, vtau, vlapl)
+    @test vrho ≈ [ 0.07015148, -0.4085103, -0.73564854, -0.97043302, -1.15268102] atol=1e-6
+    @test iszero(vsigma)
+    @test iszero(vtau)
+    @test iszero(vlapl)
 end
 
 @testset "evaluate! with invalid arguments" begin

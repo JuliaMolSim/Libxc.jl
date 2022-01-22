@@ -159,7 +159,7 @@ end
 
 
 function evaluate!(func::Functional, ::Val{:mgga}, rho::LibxcArray;
-                   sigma::LibxcArray, lapl::LibxcArray, tau::LibxcArray,
+                   sigma::LibxcArray, lapl::LibxcOptArray=C_NULL, tau::LibxcArray,
                    zk::LibxcOptArray=C_NULL,
                    vrho::LibxcOptArray=C_NULL,
                    vsigma::LibxcOptArray=C_NULL,
