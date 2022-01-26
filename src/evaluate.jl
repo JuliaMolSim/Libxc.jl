@@ -52,6 +52,10 @@ as a named tuple.
 """
 function evaluate(func::Functional; derivatives=0:1, rho::AbstractArray, kwargs...)
     @assert all(0 .≤ derivatives .≤ 4)
+    if !all(d in supported_derivatives(func) for d in derivatives)
+        error("Functional $(func.identifier) does only support derivatives of " *
+              "orders $(supported_derivatives(func)), but you requested $derivatives.")
+    end
 
     # Determine the gridshape (i.e. the shape of the grid points without the spin components)
     if ndims(rho) > 1

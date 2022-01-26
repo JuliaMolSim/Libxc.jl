@@ -8,6 +8,7 @@ mutable struct Functional
     kind::Symbol
     family::Symbol
     flags::Vector{Symbol}
+    derivatives::Vector{Int}  # Derivatives supported by the functional
     references::Vector  # Related article references as list of named tuples
 
     # Spin dimensions libxc expects for various quantities
@@ -52,8 +53,12 @@ function Functional(identifier::Symbol; n_spin::Integer = 1)
         references = extract_references(funcinfo)
         dimensions = unsafe_load(pointer).dim
 
+        # Flags for having 0th to 4th derivative
+        derivative_flags = (:exc, :vxc, :fxc, :kxc, :lxc)
+        derivatives = [i-1 for (i, flag) in enumerate(derivative_flags) if flag in flags]
+
         # Make functional and attach finalizer for cleaning up the pointer
-        func = Functional(identifier, n_spin, name, kind, family, flags,
+        func = Functional(identifier, n_spin, name, kind, family, flags, derivatives,
                           references, dimensions, pointer)
         finalizer(cls -> pointer_cleanup(cls.pointer_), func)
         return func
@@ -62,6 +67,12 @@ function Functional(identifier::Symbol; n_spin::Integer = 1)
         rethrow()
     end
 end
+
+"""
+Return the list of derivatives supported by the functional
+with `0` denoting the energy, `1` the potential, `2` the kernel and so on.
+"""
+supported_derivatives(func::Functional) = func.derivatives
 
 """Is the functional an LDA or hybrid LDA functional"""
 is_lda(func::Functional)    = func.family in (:lda, :hyb_lda)
@@ -150,6 +161,20 @@ function Base.setproperty!(func::Functional, s::Symbol, v)
 end
 
 
+# Ideas:
+#    https://github.com/psi4/psi4/blob/master/psi4/src/psi4/libfunctional/LibXCfunctional.cc
+#    https://github.com/psi4/psi4/blob/master/psi4/src/psi4/libfunctional/LibXCfunctional.h
+function external_parameter_defaults(func)
+    params = Dict()
+    n_extparams = xc_func_info_get_n_ext_params(func.pointer_)
+    for i in 1:n_extparams
+        name = xc_func_info_get_ext_params_name(func.pointer_, i - 1)
+        params[unsafe_string(name)] = xc_func_info_get_ext_params_default_value(func.pointer_, i - 1)
+    end
+    params
+end
+
+
 # Provide maps which translate between the conventions
 # used in Libxc.jl and libxc
 
@@ -190,6 +215,7 @@ const FLAGMAP = Dict(
     XC_FLAGS_DEVELOPMENT     => :development,
     XC_FLAGS_NEEDS_LAPLACIAN => :needs_laplacian,
 )
+
 
 function extract_flags(flags)
     ret = Symbol[]

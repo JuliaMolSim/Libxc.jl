@@ -28,6 +28,7 @@ end
     @test lda.kind == :exchange
     @test lda.name == "Slater exchange"
     @test lda.n_spin == 2
+    @test all(i in supported_derivatives(lda) for i in 0:2)
 end
 
 @testset "LDA and GGA evaluate" begin
@@ -164,8 +165,12 @@ end
     vtau   = randn(Float64, 5)
     vlapl  = randn(Float64, 5)
 
-    tpss_x = Functional(:mgga_x_tb09, n_spin=1)
-    evaluate!(tpss_x; rho, sigma, lapl, tau, vrho, vsigma, vtau, vlapl)
+    # TB09 is a potential functional, construct and check this
+    tb09_x = Functional(:mgga_x_tb09, n_spin=1)
+    @test all(i in supported_derivatives(tb09_x) for i in 1:2)
+    @test !(0 in supported_derivatives(tb09_x))
+
+    evaluate!(tb09_x; rho, sigma, lapl, tau, vrho, vsigma, vtau, vlapl)
     @test vrho ≈ [ 0.07015148, -0.4085103, -0.73564854, -0.97043302, -1.15268102] atol=1e-6
     @test iszero(vsigma)
     @test iszero(vtau)
