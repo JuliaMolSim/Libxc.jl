@@ -183,6 +183,7 @@ end
 
     # Derivatives ≥ 3 not compiled into libxc at the moment
     @test_throws ArgumentError evaluate(func, rho=rho, derivatives=0:3)
+    @test_throws ArgumentError evaluate!(func, rho=rho, v3rho3=randn(5))
 
     @test_throws DimensionMismatch evaluate!(func, rho=rho, zk=randn(2))
 end
