@@ -1,17 +1,17 @@
 using Libxc
 using Printf
 
-length(ARGS) == 1 || error("Usage: xc-info.jl identifier")
+#length(ARGS) == 1 || error("Usage: xc-info.jl identifier")
 
-func = Functional(Symbol(ARGS[1]))
-
+#func = Functional(Symbol(ARGS[1]))
+func = Functional(:GGA_XC_B97_D)
 for s in (:identifier, :name, :family, :kind)
     @printf "%-10s: %-20s\n" string(s) getproperty(func, s)
 end
 
 println()
 if is_global_hybrid(func)
-    println("This is a global hybrid functional with $(func.exx_coefficient)% " *
+    println("This is a global hybrid functional with $(100func.exx_coefficient)% " *
             "exact exchange")
 elseif is_range_separated(func)
     print("This is a range-separated hybrid functional with range-separation " *
