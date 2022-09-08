@@ -9,6 +9,13 @@ const ARGUMENTS = Dict(
         [:v3rho3, :v3rho2sigma, :v3rhosigma2, :v3sigma3],
         [:v4rho4, :v4rho3sigma, :v4rho2sigma2, :v4rhosigma3, :v4sigma4],
     ],
+    :hyb_gga => [
+        [:zk],
+        [:vrho, :vsigma],
+        [:v2rho2, :v2rhosigma, :v2sigma2],
+        [:v3rho3, :v3rho2sigma, :v3rhosigma2, :v3sigma3],
+        [:v4rho4, :v4rho3sigma, :v4rho2sigma2, :v4rhosigma3, :v4sigma4],
+    ],
     :mgga => [
         [:zk],
         [:vrho, :vsigma, :vlapl, :vtau],
@@ -162,19 +169,19 @@ function evaluate!(func::Functional, ::Val{:gga}, rho::LibxcArray; sigma::LibxcA
            v4rho4, v4rho3sigma, v4rho2sigma2, v4rhosigma3, v4sigma4)
 end
 function evaluate!(func::Functional, ::Val{:hyb_gga}, rho::LibxcArray; sigma::LibxcArray,
-    zk::LibxcOptArray=C_NULL,
-    vrho::LibxcOptArray=C_NULL, vsigma::LibxcOptArray=C_NULL,
-    v2rho2::LibxcOptArray=C_NULL, v2rhosigma::LibxcOptArray=C_NULL,
-    v2sigma2::LibxcOptArray=C_NULL,
-    v3rho3::LibxcOptArray=C_NULL, v3rho2sigma::LibxcOptArray=C_NULL,
-    v3rhosigma2::LibxcOptArray=C_NULL, v3sigma3::LibxcOptArray=C_NULL,
-    v4rho4::LibxcOptArray=C_NULL, v4rho3sigma::LibxcOptArray=C_NULL,
-    v4rho2sigma2::LibxcOptArray=C_NULL, v4rhosigma3::LibxcOptArray=C_NULL,
-    v4sigma4::LibxcOptArray=C_NULL)
-np = Int(length(rho) / func.spin_dimensions.rho)
-xc_gga(func.pointer_, np, rho, sigma, zk, vrho, vsigma, v2rho2, v2rhosigma, v2sigma2,
-v3rho3, v3rho2sigma, v3rhosigma2, v3sigma3,
-v4rho4, v4rho3sigma, v4rho2sigma2, v4rhosigma3, v4sigma4)
+                    zk::LibxcOptArray=C_NULL,
+                    vrho::LibxcOptArray=C_NULL, vsigma::LibxcOptArray=C_NULL,
+                    v2rho2::LibxcOptArray=C_NULL, v2rhosigma::LibxcOptArray=C_NULL,
+                    v2sigma2::LibxcOptArray=C_NULL,
+                    v3rho3::LibxcOptArray=C_NULL, v3rho2sigma::LibxcOptArray=C_NULL,
+                    v3rhosigma2::LibxcOptArray=C_NULL, v3sigma3::LibxcOptArray=C_NULL,
+                    v4rho4::LibxcOptArray=C_NULL, v4rho3sigma::LibxcOptArray=C_NULL,
+                    v4rho2sigma2::LibxcOptArray=C_NULL, v4rhosigma3::LibxcOptArray=C_NULL,
+                    v4sigma4::LibxcOptArray=C_NULL)
+    np = Int(length(rho) / func.spin_dimensions.rho)
+    xc_gga(func.pointer_, np, rho, sigma, zk, vrho, vsigma, v2rho2, v2rhosigma, v2sigma2,
+            v3rho3, v3rho2sigma, v3rhosigma2, v3sigma3,
+            v4rho4, v4rho3sigma, v4rho2sigma2, v4rhosigma3, v4sigma4)
 end
 
 
