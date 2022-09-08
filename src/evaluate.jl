@@ -2,6 +2,7 @@
 # :input refers to input argument and numbers to the derivative order
 const ARGUMENTS = Dict(
     :lda => [[:zk], [:vrho], [:v2rho2], [:v3rho3], [:v4rho4], ],
+    :hyb_lda => [[:zk], [:vrho], [:v2rho2], [:v3rho3], [:v4rho4], ],
     :gga => [
         [:zk],
         [:vrho, :vsigma],
@@ -33,12 +34,31 @@ const ARGUMENTS = Dict(
          :v4sigma2tau2, :v4sigmalapl3, :v4sigmalapl2tau, :v4sigmalapltau2, :v4sigmatau3,
          :v4lapl4, :v4lapl3tau, :v4lapl2tau2, :v4lapltau3, :v4tau4],
      ],
+     :hyb_mgga => [
+         [:zk],
+         [:vrho, :vsigma, :vlapl, :vtau],
+         [:v2rho2, :v2rhosigma, :v2rholapl, :v2rhotau, :v2sigma2, :v2sigmalapl,
+          :v2sigmatau, :v2lapl2, :v2lapltau, :v2tau2],
+         [:v3rho3, :v3rho2sigma, :v3rho2lapl, :v3rho2tau, :v3rhosigma2, :v3rhosigmalapl,
+          :v3rhosigmatau, :v3rholapl2, :v3rholapltau, :v3rhotau2, :v3sigma3, :v3sigma2lapl,
+          :v3sigma2tau, :v3sigmalapl2, :v3sigmalapltau, :v3sigmatau2, :v3lapl3,
+          :v3lapl2tau, :v3lapltau2, :v3tau3],
+         [:v4rho4, :v4rho3sigma, :v4rho3lapl, :v4rho3tau, :v4rho2sigma2, :v4rho2sigmalapl,
+          :v4rho2sigmatau, :v4rho2lapl2, :v4rho2lapltau, :v4rho2tau2, :v4rhosigma3,
+          :v4rhosigma2lapl, :v4rhosigma2tau, :v4rhosigmalapl2, :v4rhosigmalapltau,
+          :v4rhosigmatau2, :v4rholapl3, :v4rholapl2tau, :v4rholapltau2, :v4rhotau3,
+          :v4sigma4, :v4sigma3lapl, :v4sigma3tau, :v4sigma2lapl2, :v4sigma2lapltau,
+          :v4sigma2tau2, :v4sigmalapl3, :v4sigmalapl2tau, :v4sigmalapltau2, :v4sigmatau3,
+          :v4lapl4, :v4lapl3tau, :v4lapl2tau2, :v4lapltau3, :v4tau4],
+      ],
 )
 const INPUT = Dict(
     :lda => [:rho],
+    :hyb_lda => [:rho],
     :gga => [:rho, :sigma],
     :hyb_gga => [:rho, :sigma],
     :mgga => [:rho, :sigma, :lapl, :tau],
+    :hyb_mgga => [:rho, :sigma, :lapl, :tau],
 )
 
 function derivative_flag(family, argument)
@@ -144,7 +164,7 @@ const LibxcArray = Array{Float64}
 const LibxcOptArray = Union{LibxcArray, Ptr{Nothing}}
 
 
-function evaluate!(func::Functional, ::Val{:lda}, rho::LibxcArray;
+function evaluate!(func::Functional, ::Union{Val{:lda},Val{:hyb_lda}}, rho::LibxcArray;
                    zk::LibxcOptArray=C_NULL,
                    vrho::LibxcOptArray=C_NULL, v2rho2::LibxcOptArray=C_NULL,
                    v3rho3::LibxcOptArray=C_NULL, v4rho4::LibxcOptArray=C_NULL)
@@ -153,7 +173,7 @@ function evaluate!(func::Functional, ::Val{:lda}, rho::LibxcArray;
 end
 
 
-function evaluate!(func::Functional, ::Val{:gga}, rho::LibxcArray; sigma::LibxcArray,
+function evaluate!(func::Functional, ::Union{Val{:gga},Val{:hyb_gga}}, rho::LibxcArray; sigma::LibxcArray,
                    zk::LibxcOptArray=C_NULL,
                    vrho::LibxcOptArray=C_NULL, vsigma::LibxcOptArray=C_NULL,
                    v2rho2::LibxcOptArray=C_NULL, v2rhosigma::LibxcOptArray=C_NULL,
@@ -168,24 +188,9 @@ function evaluate!(func::Functional, ::Val{:gga}, rho::LibxcArray; sigma::LibxcA
            v3rho3, v3rho2sigma, v3rhosigma2, v3sigma3,
            v4rho4, v4rho3sigma, v4rho2sigma2, v4rhosigma3, v4sigma4)
 end
-function evaluate!(func::Functional, ::Val{:hyb_gga}, rho::LibxcArray; sigma::LibxcArray,
-                    zk::LibxcOptArray=C_NULL,
-                    vrho::LibxcOptArray=C_NULL, vsigma::LibxcOptArray=C_NULL,
-                    v2rho2::LibxcOptArray=C_NULL, v2rhosigma::LibxcOptArray=C_NULL,
-                    v2sigma2::LibxcOptArray=C_NULL,
-                    v3rho3::LibxcOptArray=C_NULL, v3rho2sigma::LibxcOptArray=C_NULL,
-                    v3rhosigma2::LibxcOptArray=C_NULL, v3sigma3::LibxcOptArray=C_NULL,
-                    v4rho4::LibxcOptArray=C_NULL, v4rho3sigma::LibxcOptArray=C_NULL,
-                    v4rho2sigma2::LibxcOptArray=C_NULL, v4rhosigma3::LibxcOptArray=C_NULL,
-                    v4sigma4::LibxcOptArray=C_NULL)
-    np = Int(length(rho) / func.spin_dimensions.rho)
-    xc_gga(func.pointer_, np, rho, sigma, zk, vrho, vsigma, v2rho2, v2rhosigma, v2sigma2,
-            v3rho3, v3rho2sigma, v3rhosigma2, v3sigma3,
-            v4rho4, v4rho3sigma, v4rho2sigma2, v4rhosigma3, v4sigma4)
-end
 
 
-function evaluate!(func::Functional, ::Val{:mgga}, rho::LibxcArray;
+function evaluate!(func::Functional, ::Union{Val{:mgga},Val{:hyb_mgga}}, rho::LibxcArray;
                    sigma::LibxcArray, lapl::LibxcOptArray=C_NULL, tau::LibxcArray,
                    zk::LibxcOptArray=C_NULL,
                    vrho::LibxcOptArray=C_NULL,
