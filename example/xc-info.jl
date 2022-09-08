@@ -1,10 +1,10 @@
 using Libxc
 using Printf
 
-#length(ARGS) == 1 || error("Usage: xc-info.jl identifier")
+length(ARGS) == 1 || error("Usage: xc-info.jl identifier")
 
-#func = Functional(Symbol(ARGS[1]))
-func = Functional(:GGA_XC_B97_D)
+func = Functional(Symbol(ARGS[1]))
+
 for s in (:identifier, :name, :family, :kind)
     @printf "%-10s: %-20s\n" string(s) getproperty(func, s)
 end
