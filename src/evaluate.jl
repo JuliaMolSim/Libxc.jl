@@ -27,11 +27,22 @@ const ARGUMENTS = Dict(
          :v4lapl4, :v4lapl3tau, :v4lapl2tau2, :v4lapltau3, :v4tau4],
      ],
 )
+
+# Hybrid or not, the arguments are the same
+ARGUMENTS[:hyb_lda] = ARGUMENTS[:lda]
+ARGUMENTS[:hyb_gga] = ARGUMENTS[:lda]
+ARGUMENTS[:hyb_mgga] = ARGUMENTS[:lda]
+
 const INPUT = Dict(
     :lda => [:rho],
     :gga => [:rho, :sigma],
     :mgga => [:rho, :sigma, :lapl, :tau],
 )
+
+# Hybrid or not, the inputs are the same
+INPUT[:hyb_lda] = INPUT[:lda]
+INPUT[:hyb_gga] = INPUT[:gga]
+INPUT[:hyb_mgga] = INPUT[:mgga]
 
 function derivative_flag(family, argument)
     flags = (:exc, :vxc, :fxc, :kxc, :lxc)  # flags for having 0th to 4th derivative
@@ -136,7 +147,7 @@ const LibxcArray = Array{Float64}
 const LibxcOptArray = Union{LibxcArray, Ptr{Nothing}}
 
 
-function evaluate!(func::Functional, ::Val{:lda}, rho::LibxcArray;
+function evaluate!(func::Functional, ::Union{Val{:lda},Val{:hyb_lda}}, rho::LibxcArray;
                    zk::LibxcOptArray=C_NULL,
                    vrho::LibxcOptArray=C_NULL, v2rho2::LibxcOptArray=C_NULL,
                    v3rho3::LibxcOptArray=C_NULL, v4rho4::LibxcOptArray=C_NULL)
@@ -145,8 +156,8 @@ function evaluate!(func::Functional, ::Val{:lda}, rho::LibxcArray;
 end
 
 
-function evaluate!(func::Functional, ::Val{:gga}, rho::LibxcArray; sigma::LibxcArray,
-                   zk::LibxcOptArray=C_NULL,
+function evaluate!(func::Functional, ::Union{Val{:gga},Val{:hyb_gga}}, rho::LibxcArray;
+                   sigma::LibxcArray, zk::LibxcOptArray=C_NULL,
                    vrho::LibxcOptArray=C_NULL, vsigma::LibxcOptArray=C_NULL,
                    v2rho2::LibxcOptArray=C_NULL, v2rhosigma::LibxcOptArray=C_NULL,
                    v2sigma2::LibxcOptArray=C_NULL,
@@ -162,8 +173,7 @@ function evaluate!(func::Functional, ::Val{:gga}, rho::LibxcArray; sigma::LibxcA
 end
 
 
-
-function evaluate!(func::Functional, ::Val{:mgga}, rho::LibxcArray;
+function evaluate!(func::Functional, ::Union{Val{:mgga},Val{:hyb_mgga}}, rho::LibxcArray;
                    sigma::LibxcArray, lapl::LibxcOptArray=C_NULL, tau::LibxcArray,
                    zk::LibxcOptArray=C_NULL,
                    vrho::LibxcOptArray=C_NULL,

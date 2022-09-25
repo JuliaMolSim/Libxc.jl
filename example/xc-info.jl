@@ -11,7 +11,7 @@ end
 
 println()
 if is_global_hybrid(func)
-    println("This is a global hybrid functional with $(func.exx_coefficient)% " *
+    println("This is a global hybrid functional with $(100func.exx_coefficient)% " *
             "exact exchange")
 elseif is_range_separated(func)
     print("This is a range-separated hybrid functional with range-separation " *
