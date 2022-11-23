@@ -3,11 +3,15 @@
 
 
 function xc_reference()
-    ccall((:xc_reference, libxc), Cstring, ())
+    ccall((:xc_reference, libxc), Ptr{Cchar}, ())
 end
 
 function xc_reference_doi()
-    ccall((:xc_reference_doi, libxc), Cstring, ())
+    ccall((:xc_reference_doi, libxc), Ptr{Cchar}, ())
+end
+
+function xc_reference_key()
+    ccall((:xc_reference_key, libxc), Ptr{Cchar}, ())
 end
 
 function xc_version(major, minor, micro)
@@ -15,19 +19,23 @@ function xc_version(major, minor, micro)
 end
 
 function xc_version_string()
-    ccall((:xc_version_string, libxc), Cstring, ())
+    ccall((:xc_version_string, libxc), Ptr{Cchar}, ())
 end
 
 function xc_func_reference_get_ref(reference)
-    ccall((:xc_func_reference_get_ref, libxc), Cstring, (Ptr{func_reference_type},), reference)
+    ccall((:xc_func_reference_get_ref, libxc), Ptr{Cchar}, (Ptr{func_reference_type},), reference)
 end
 
 function xc_func_reference_get_doi(reference)
-    ccall((:xc_func_reference_get_doi, libxc), Cstring, (Ptr{func_reference_type},), reference)
+    ccall((:xc_func_reference_get_doi, libxc), Ptr{Cchar}, (Ptr{func_reference_type},), reference)
 end
 
 function xc_func_reference_get_bibtex(reference)
-    ccall((:xc_func_reference_get_bibtex, libxc), Cstring, (Ptr{func_reference_type},), reference)
+    ccall((:xc_func_reference_get_bibtex, libxc), Ptr{Cchar}, (Ptr{func_reference_type},), reference)
+end
+
+function xc_func_reference_get_key(reference)
+    ccall((:xc_func_reference_get_key, libxc), Ptr{Cchar}, (Ptr{func_reference_type},), reference)
 end
 
 function xc_func_info_get_number(info)
@@ -39,7 +47,7 @@ function xc_func_info_get_kind(info)
 end
 
 function xc_func_info_get_name(info)
-    ccall((:xc_func_info_get_name, libxc), Cstring, (Ptr{xc_func_info_type},), info)
+    ccall((:xc_func_info_get_name, libxc), Ptr{Cchar}, (Ptr{xc_func_info_type},), info)
 end
 
 function xc_func_info_get_family(info)
@@ -59,11 +67,11 @@ function xc_func_info_get_n_ext_params(info)
 end
 
 function xc_func_info_get_ext_params_name(p, number)
-    ccall((:xc_func_info_get_ext_params_name, libxc), Cstring, (Ptr{xc_func_info_type}, Cint), p, number)
+    ccall((:xc_func_info_get_ext_params_name, libxc), Ptr{Cchar}, (Ptr{xc_func_info_type}, Cint), p, number)
 end
 
 function xc_func_info_get_ext_params_description(info, number)
-    ccall((:xc_func_info_get_ext_params_description, libxc), Cstring, (Ptr{xc_func_info_type}, Cint), info, number)
+    ccall((:xc_func_info_get_ext_params_description, libxc), Ptr{Cchar}, (Ptr{xc_func_info_type}, Cint), info, number)
 end
 
 function xc_func_info_get_ext_params_default_value(info, number)
@@ -71,11 +79,11 @@ function xc_func_info_get_ext_params_default_value(info, number)
 end
 
 function xc_functional_get_number(name)
-    ccall((:xc_functional_get_number, libxc), Cint, (Cstring,), name)
+    ccall((:xc_functional_get_number, libxc), Cint, (Ptr{Cchar},), name)
 end
 
 function xc_functional_get_name(number)
-    ccall((:xc_functional_get_name, libxc), Cstring, (Cint,), number)
+    ccall((:xc_functional_get_name, libxc), Ptr{Cchar}, (Cint,), number)
 end
 
 function xc_family_from_id(id, family, number)
@@ -99,7 +107,7 @@ function xc_available_functional_numbers_by_name(list)
 end
 
 function xc_available_functional_names(list)
-    ccall((:xc_available_functional_names, libxc), Cvoid, (Ptr{Cstring},), list)
+    ccall((:xc_available_functional_names, libxc), Cvoid, (Ptr{Ptr{Cchar}},), list)
 end
 
 function xc_func_alloc()
@@ -143,7 +151,15 @@ function xc_func_set_ext_params(p, ext_params)
 end
 
 function xc_func_set_ext_params_name(p, name, par)
-    ccall((:xc_func_set_ext_params_name, libxc), Cvoid, (Ptr{xc_func_type}, Cstring, Cdouble), p, name, par)
+    ccall((:xc_func_set_ext_params_name, libxc), Cvoid, (Ptr{xc_func_type}, Ptr{Cchar}, Cdouble), p, name, par)
+end
+
+function xc_lda_new(p, order, np, rho, out)
+    ccall((:xc_lda_new, libxc), Cvoid, (Ptr{xc_func_type}, Cint, Csize_t, Ptr{Cdouble}, Ptr{xc_lda_out_params}), p, order, np, rho, out)
+end
+
+function xc_gga_new(p, order, np, rho, sigma, out)
+    ccall((:xc_gga_new, libxc), Cvoid, (Ptr{xc_func_type}, Cint, Csize_t, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{xc_gga_out_params}), p, order, np, rho, sigma, out)
 end
 
 function xc_lda(p, np, rho, zk, vrho, v2rho2, v3rho3, v4rho4)
@@ -297,3 +313,16 @@ end
 function xc_nlc_coef(p, nlc_b, nlc_C)
     ccall((:xc_nlc_coef, libxc), Cvoid, (Ptr{xc_func_type}, Ptr{Cdouble}, Ptr{Cdouble}), p, nlc_b, nlc_C)
 end
+
+function xc_num_aux_funcs(p)
+    ccall((:xc_num_aux_funcs, libxc), Cint, (Ptr{xc_func_type},), p)
+end
+
+function xc_aux_func_ids(p, ids)
+    ccall((:xc_aux_func_ids, libxc), Cvoid, (Ptr{xc_func_type}, Ptr{Cint}), p, ids)
+end
+
+function xc_aux_func_weights(p, weights)
+    ccall((:xc_aux_func_weights, libxc), Cvoid, (Ptr{xc_func_type}, Ptr{Cdouble}), p, weights)
+end
+

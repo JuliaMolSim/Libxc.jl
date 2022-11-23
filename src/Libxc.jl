@@ -2,16 +2,12 @@ module Libxc
 using Libxc_jll
 const libxc = Libxc_jll.libxc
 
-include("gen/libxc_common.jl")
-include("gen/libxc.jl")
+include("gen/common.jl")
+include("gen/api.jl")
 include("Functional.jl")
 include("evaluate.jl")
 
-const libxc_version = begin
-    varray = zeros(Cint, 3)
-    xc_version(pointer(varray, 1), pointer(varray, 2), pointer(varray, 3))
-    VersionNumber(varray[1], varray[2], varray[3])
-end
+const libxc_version = VersionNumber(XC_VERSION)
 const libxc_doi = unsafe_string(Libxc.xc_reference_doi())
 
 """Return the list of available libxc functionals as strings"""
