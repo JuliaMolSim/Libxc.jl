@@ -1,0 +1,7 @@
+[general]
+output_api_file_path    = "api.jl"
+output_common_file_path = "common.jl"
+output_file_path        = "Libxc.jl"
+library_name = "libxc"
+module_name  = "Libxc"
+jll_pkg_name = "Libxc_jll"
