@@ -234,6 +234,7 @@ function extract_references(info::Ptr{xc_func_info_type})
         ref_ptr = xc_func_info_get_references(info, iref)
         (reference=unsafe_string(xc_func_reference_get_ref(ref_ptr)),
          doi=unsafe_string(xc_func_reference_get_doi(ref_ptr)),
-         bibtex=unsafe_string(xc_func_reference_get_bibtex(ref_ptr)))
+         bibtex=unsafe_string(xc_func_reference_get_bibtex(ref_ptr)),
+         key=unsafe_string(xc_func_reference_get_key(ref_ptr)))
     end
 end
