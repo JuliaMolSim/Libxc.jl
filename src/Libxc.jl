@@ -1,10 +1,11 @@
 module Libxc
-using Libxc_jll
-const libxc = Libxc_jll.libxc
+using Libxc_jll: libxc
+using Requires
 
 include("gen/common.jl")
 include("gen/api.jl")
 include("Functional.jl")
+include("functional_gpu.jl")
 include("evaluate.jl")
 
 const libxc_version = VersionNumber(XC_VERSION)
@@ -28,5 +29,9 @@ export available_functionals
 export Functional, evaluate, evaluate!, supported_derivatives
 export is_lda, is_gga, is_mgga, is_hybrid, is_vv10, is_range_separated, is_global_hybrid
 export needs_laplacian
+
+function __init__()
+    @require CUDA="052768ef-5323-5732-b1bb-66c8b64840ba" include("evaluate_gpu.jl")
+end
 
 end # module
