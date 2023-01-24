@@ -3,9 +3,13 @@ on:
   push:
     branches:
       - master
+    tags: ['*']
   pull_request:
-    branches:
-      - master
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }}
@@ -13,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ['1.6']
+        version: ['1.7']
         os:
           - ubuntu-latest
           - macOS-latest
@@ -27,20 +31,10 @@ jobs:
         with:
           version: ${{ matrix.version }}
           arch: x64
-      - uses: actions/cache@v1
-        env:
-          cache-name: cache-artifacts
-        with:
-          path: ~/.julia/artifacts
-          key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-test-${{ env.cache-name }}-
-            ${{ runner.os }}-test-
-            ${{ runner.os }}-
-      - uses: julia-actions/julia-buildpkg@latest
-      - uses: julia-actions/julia-runtest@latest
+      - uses: julia-actions/cache@v1
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
-      - uses: julia-actions/julia-uploadcoveralls@v1
-        env:
-          COVERALLS_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
-        continue-on-error: true
+      - uses: codecov/codecov-action@v2
+        with:
+          files: lcov.info

@@ -1,17 +1,22 @@
 name = "Libxc"
 uuid = "66e17ffc-8502-11e9-23b5-c9248d0eb96d"
 authors = ["Jason Eu <morty.yu@yahoo.com>", "Michael F. Herbst <info@michael-herbst.com>"]
-version = "0.3.12"
+version = "0.3.13"
 
 [deps]
+Libxc_GPU_jll = "25af9330-9b41-55d4-a324-1a83c0a0a1ac"
 Libxc_jll = "a56a6d9d-ad03-58af-ab61-878bf78270d6"
+Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 
 [compat]
+Libxc_GPU_jll = "6"
 Libxc_jll = "6"
-julia = "1.6"
+Requires = "1"
+julia = "1.7"
 
 [extras]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test"]
+test = ["Test", "CUDA"]

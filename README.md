@@ -15,7 +15,7 @@
 This package provides Julia bindings to the
 [libxc](https://tddft.org/programs/libxc/) library
 for common exchange-correlation functionals in density-functional theory.
-At least **Julia 1.6** is required.
+At least **Julia 1.7** is required.
 
 ## Usage
 Install the library from Julia as usual:
