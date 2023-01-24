@@ -2,12 +2,15 @@
 
 | **Build Status**                                                      |  **License**                     |
 |:--------------------------------------------------------------------- |:-------------------------------- |
-| ![][ci-img] [![][cov-img]][cov-url]  | [![][license-img]][license-url]  |
+| ![][ci-img] [![][cigpu-img]][cigpu-url] [![][ccov-img]][ccov-url]  | [![][license-img]][license-url]  |
 
 [ci-img]: https://github.com/JuliaMolSim/Libxc.jl/workflows/CI/badge.svg
 
-[cov-img]: https://coveralls.io/repos/JuliaMolSim/Libxc.jl/badge.svg?branch=master&service=github
-[cov-url]: https://coveralls.io/github/JuliaMolSim/Libxc.jl?branch=master
+[cigpu-img]: https://git.uni-paderborn.de/herbstm/Libxc.jl/badges/master/pipeline.svg?key_text=GPU%20CI
+[cigpu-url]: https://git.uni-paderborn.de/herbstm/Libxc.jl/-/pipelines
+
+[ccov-img]: https://codecov.io/gh/JuliaMolSim/Libxc.jl/branch/master/graph/badge.svg?token=ZL7RUND4YE
+[ccov-url]: https://codecov.io/gh/JuliaMolSim/Libxc.jl
 
 [license-img]: https://img.shields.io/github/license/JuliaMolSim/Libxc.jl.svg?maxAge=2592000
 [license-url]: https://github.com/JuliaMolSim/Libxc.jl/blob/master/LICENSE
@@ -46,7 +49,10 @@ result = evaluate(gga_x, rho=rho, sigma=sigma, derivative=0)
 
 ## Status
 Full support for evaluating LDA, GGA and meta-GGA functionals
-as shown above. Hybrid or range-separated hybrids and VV10-type functionals
+on CPUs as shown above. Experimental GPU support by dispatching to the CUDA
+version of libxc when `evaluate` is called with `CuArray`s.
+
+Hybrid or range-separated hybrids and VV10-type functionals
 export parameters required in the host programs as properties of the `Functional`
 Julia object. For example
 ```julia
