@@ -2,6 +2,10 @@ using Test
 using Libxc
 using CUDA
 
+@testset "Properties" begin
+    @test CUDA.has_cuda()
+end
+
 @testset "Compare LDA on CPU/GPU" begin
     n_p = 12
 
