@@ -12,7 +12,7 @@ Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 Libxc_GPU_jll = "6"
 Libxc_jll = "6"
 Requires = "1"
-julia = "1.6"
+julia = "1.7"
 
 [extras]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
