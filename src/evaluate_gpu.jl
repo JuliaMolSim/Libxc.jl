@@ -143,19 +143,24 @@ function evaluate!(func::Functional, ::Union{Val{:mgga},Val{:hyb_mgga}}, rho::Cu
                    v4lapltau3::OptCuArray=CU_NULL,
                    v4tau4::OptCuArray=CU_NULL)
     np = Int(length(rho) / func.spin_dimensions.rho)
+    @warn "meta-GGAs on GPU seem to be broken at least with Libxc 6.1.0"
 
     pointer = allocate_gpufunctional(func)
-    @ccall libxc_gpu.xc_gga(
-        pointer::Ptr{xc_func_type}, np::Csize_t, rho::CuPtr{Cdouble}, sigma::CuPtr{Cdouble},
+    @ccall libxc_gpu.xc_mgga(
+        pointer::Ptr{xc_func_type}, np::Csize_t,
+        rho::CuPtr{Cdouble}, sigma::CuPtr{Cdouble},
         lapl::CuPtr{Cdouble}, tau::CuPtr{Cdouble},
+        #
         zk::CuPtr{Cdouble}, vrho::CuPtr{Cdouble}, vsigma::CuPtr{Cdouble},
         vlapl::CuPtr{Cdouble}, vtau::CuPtr{Cdouble},
+        #
         v2rho2::CuPtr{Cdouble}, v2rhosigma::CuPtr{Cdouble},
         v2rholapl::CuPtr{Cdouble}, v2rhotau::CuPtr{Cdouble},
         v2sigma2::CuPtr{Cdouble}, v2sigmalapl::CuPtr{Cdouble},
         v2sigmatau::CuPtr{Cdouble}, v2lapl2::CuPtr{Cdouble},
         v2lapltau::CuPtr{Cdouble}, v2tau2::CuPtr{Cdouble},
         v3rho3::CuPtr{Cdouble}, v3rho2sigma::CuPtr{Cdouble},
+        #
         v3rho2lapl::CuPtr{Cdouble}, v3rho2tau::CuPtr{Cdouble},
         v3rhosigma2::CuPtr{Cdouble}, v3rhosigmalapl::CuPtr{Cdouble},
         v3rhosigmatau::CuPtr{Cdouble}, v3rholapl2::CuPtr{Cdouble},
@@ -166,24 +171,24 @@ function evaluate!(func::Functional, ::Union{Val{:mgga},Val{:hyb_mgga}}, rho::Cu
         v3lapl3::CuPtr{Cdouble}, v3lapl2tau::CuPtr{Cdouble},
         v3lapltau2::CuPtr{Cdouble}, v3tau3::CuPtr{Cdouble},
         v4rho4::CuPtr{Cdouble}, v4rho3sigma::CuPtr{Cdouble},
-        v4rho3lapl::CuPtr{Cdouble}, v4rho3tau::CuPtr{Cdouble},
-        v4rho2sigma2::CuPtr{Cdouble}, v4rho2sigmalapl::CuPtr{Cdouble},
-        v4rho2sigmatau::CuPtr{Cdouble}, v4rho2lapl2::CuPtr{Cdouble},
-        v4rho2lapltau::CuPtr{Cdouble}, v4rho2tau2::CuPtr{Cdouble},
-        v4rhosigma3::CuPtr{Cdouble}, v4rhosigma2lapl::CuPtr{Cdouble},
-        v4rhosigma2tau::CuPtr{Cdouble}, v4rhosigmalapl2::CuPtr{Cdouble},
-        v4rhosigmalapltau::CuPtr{Cdouble}, v4rhosigmatau2::CuPtr{Cdouble},
-        v4rholapl3::CuPtr{Cdouble}, v4rholapl2tau::CuPtr{Cdouble},
-        v4rholapltau2::CuPtr{Cdouble}, v4rhotau3::CuPtr{Cdouble},
-        v4sigma4::CuPtr{Cdouble}, v4sigma3lapl::CuPtr{Cdouble},
-        v4sigma3tau::CuPtr{Cdouble}, v4sigma2lapl2::CuPtr{Cdouble},
-        v4sigma2lapltau::CuPtr{Cdouble}, v4sigma2tau2::CuPtr{Cdouble},
-        v4sigmalapl3::CuPtr{Cdouble}, v4sigmalapl2tau::CuPtr{Cdouble},
-        v4sigmalapltau2::CuPtr{Cdouble}, v4sigmatau3::CuPtr{Cdouble},
-        v4lapl4::CuPtr{Cdouble}, v4lapl3tau::CuPtr{Cdouble},
-        v4lapl2tau2::CuPtr{Cdouble}, v4lapltau3::CuPtr{Cdouble},
-        v4tau4::CuPtr{Cdouble}
+        v4rho3lapl::CuPtr{Cdouble},
+        #
+        v4rho3tau::CuPtr{Cdouble}, v4rho2sigma2::CuPtr{Cdouble},
+        v4rho2sigmalapl::CuPtr{Cdouble}, v4rho2sigmatau::CuPtr{Cdouble},
+        v4rho2lapl2::CuPtr{Cdouble}, v4rho2lapltau::CuPtr{Cdouble},
+        v4rho2tau2::CuPtr{Cdouble}, v4rhosigma3::CuPtr{Cdouble},
+        v4rhosigma2lapl::CuPtr{Cdouble}, v4rhosigma2tau::CuPtr{Cdouble},
+        v4rhosigmalapl2::CuPtr{Cdouble}, v4rhosigmalapltau::CuPtr{Cdouble},
+        v4rhosigmatau2::CuPtr{Cdouble}, v4rholapl3::CuPtr{Cdouble},
+        v4rholapl2tau::CuPtr{Cdouble}, v4rholapltau2::CuPtr{Cdouble},
+        v4rhotau3::CuPtr{Cdouble}, v4sigma4::CuPtr{Cdouble},
+        v4sigma3lapl::CuPtr{Cdouble}, v4sigma3tau::CuPtr{Cdouble},
+        v4sigma2lapl2::CuPtr{Cdouble}, v4sigma2lapltau::CuPtr{Cdouble},
+        v4sigma2tau2::CuPtr{Cdouble}, v4sigmalapl3::CuPtr{Cdouble},
+        v4sigmalapl2tau::CuPtr{Cdouble}, v4sigmalapltau2::CuPtr{Cdouble},
+        v4sigmatau3::CuPtr{Cdouble}, v4lapl4::CuPtr{Cdouble},
+        v4lapl3tau::CuPtr{Cdouble}, v4lapl2tau2::CuPtr{Cdouble},
+        v4lapltau3::CuPtr{Cdouble}, v4tau4::CuPtr{Cdouble},
     )::Cvoid
-
     deallocate_gpufunctional(pointer)
 end
