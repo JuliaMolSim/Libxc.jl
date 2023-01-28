@@ -12,7 +12,7 @@ const libxc_version = VersionNumber(XC_VERSION)
 const libxc_doi = unsafe_string(Libxc.xc_reference_doi())
 
 """Is the CUDA version of libxc available on this platform"""
-has_cuda() = Libxc_GPU_jll.is_available()
+has_cuda() = isdefined(Libxc_GPU_jll, :libxc)
 
 """Return the list of available libxc functionals as strings"""
 function available_functionals()
@@ -35,7 +35,7 @@ export needs_laplacian
 
 function __init__()
     @require CUDA="052768ef-5323-5732-b1bb-66c8b64840ba" begin
-        @static if Libxc_GPU_jll.is_available()
+        @static if isdefined(Libxc_GPU_jll, :libxc)
             include("evaluate_gpu.jl")
         end
     end
