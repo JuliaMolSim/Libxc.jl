@@ -1,7 +1,7 @@
 name = "Libxc"
 uuid = "66e17ffc-8502-11e9-23b5-c9248d0eb96d"
 authors = ["Jason Eu <morty.yu@yahoo.com>", "Michael F. Herbst <info@michael-herbst.com>"]
-version = "0.3.13"
+version = "0.3.14"
 
 [deps]
 CUDA_Runtime_jll = "76a88914-d11a-5bdc-97e0-2f5a05c973a2"
