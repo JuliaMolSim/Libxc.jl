@@ -3,7 +3,7 @@ using Libxc
 using CUDA
 
 @testset "Properties" begin
-    @test CUDA.has_cuda()
+    @test Libxc.has_cuda()
 end
 
 @testset "Compare LDA on CPU/GPU" begin
@@ -52,7 +52,8 @@ end
         rho_d   = convert(CuArray, rho)
         sigma_d = convert(CuArray, sigma)
         tau_d   = convert(CuArray, tau)
-        res_d   = evaluate(Functional(sym; n_spin); rho=rho_d, sigma=sigma_d, tau=tau_d)
+        res_d   = evaluate(Functional(sym; n_spin);
+                           rho=rho_d, sigma=sigma_d, tau=tau_d)
 
         @test_broken maximum(abs, res.zk     - Array(res_d.zk))     < 1e-12
         @test_broken maximum(abs, res.vrho   - Array(res_d.vrho))   < 1e-12
