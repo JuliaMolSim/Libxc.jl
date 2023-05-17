@@ -1,9 +1,27 @@
+module LibxcCudaExt
 import Libxc_GPU_jll
-const libxc_gpu  = Libxc_GPU_jll.libxc
 
-const CuArray = CUDA.CuArray
-const CuPtr   = CUDA.CuPtr
-const CU_NULL = CUDA.CU_NULL
+# Extension module compatibility
+if isdefined(Base, :get_extension)
+    using Libxc: Libxc, xc_func_type, Functional
+    using CUDA
+else
+    using ..Libxc: Libxc, xc_func_type, Functional
+    using ..CUDA
+end
+
+function __init__()
+    if !Libxc_GPU_jll.is_available() && CUDA.runtime_version() ≥ v"12"
+        @warn("Libxc_GPU_jll currently not available for CUDA 12. " *
+              """Please use CUDA 11 for GPU support (i.e. `CUDA.set_runtime_version!(v"11.8")`)""")
+    end
+end
+
+if Libxc_GPU_jll.is_available()
+const libxc_gpu  = Libxc_GPU_jll.libxc
+const CuArray    = CUDA.CuArray
+const CuPtr      = CUDA.CuPtr
+const CU_NULL    = CUDA.CU_NULL
 const OptCuArray = Union{CuArray{Float64}, CuPtr{Nothing}}
 
 function allocate_gpufunctional(identifier::Symbol, n_spin::Integer)
@@ -29,7 +47,7 @@ function deallocate_gpufunctional(pointer::Ptr{xc_func_type})
 end
 
 
-function evaluate!(func::Functional, ::Union{Val{:lda},Val{:hyb_lda}}, rho::CuArray{Float64};
+function Libxc.evaluate!(func::Functional, ::Union{Val{:lda},Val{:hyb_lda}}, rho::CuArray{Float64};
                    zk::OptCuArray=CU_NULL,
                    vrho::OptCuArray=CU_NULL, v2rho2::OptCuArray=CU_NULL,
                    v3rho3::OptCuArray=CU_NULL, v4rho4::OptCuArray=CU_NULL)
@@ -43,7 +61,7 @@ function evaluate!(func::Functional, ::Union{Val{:lda},Val{:hyb_lda}}, rho::CuAr
 end
 
 
-function evaluate!(func::Functional, ::Union{Val{:gga},Val{:hyb_gga}}, rho::CuArray{Float64};
+function Libxc.evaluate!(func::Functional, ::Union{Val{:gga},Val{:hyb_gga}}, rho::CuArray{Float64};
         sigma::CuArray{Float64}, zk::OptCuArray=CU_NULL,
                    vrho::OptCuArray=CU_NULL, vsigma::OptCuArray=CU_NULL,
                    v2rho2::OptCuArray=CU_NULL, v2rhosigma::OptCuArray=CU_NULL,
@@ -70,7 +88,7 @@ function evaluate!(func::Functional, ::Union{Val{:gga},Val{:hyb_gga}}, rho::CuAr
 end
 
 
-function evaluate!(func::Functional, ::Union{Val{:mgga},Val{:hyb_mgga}}, rho::CuArray{Float64};
+function Libxc.evaluate!(func::Functional, ::Union{Val{:mgga},Val{:hyb_mgga}}, rho::CuArray{Float64};
                    sigma::CuArray{Float64}, tau::CuArray{Float64}, lapl::OptCuArray=CU_NULL,
                    zk::OptCuArray=CU_NULL,
                    vrho::OptCuArray=CU_NULL,
@@ -192,3 +210,6 @@ function evaluate!(func::Functional, ::Union{Val{:mgga},Val{:hyb_mgga}}, rho::Cu
     )::Cvoid
     deallocate_gpufunctional(pointer)
 end
+
+end  # if available
+end  # module
