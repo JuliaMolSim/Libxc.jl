@@ -49,8 +49,16 @@ result = evaluate(gga_x, rho=rho, sigma=sigma, derivative=0)
 
 ## Status
 Full support for evaluating LDA, GGA and meta-GGA functionals
-on CPUs as shown above. Experimental GPU support by dispatching to the CUDA
-version of libxc when `evaluate` is called with `CuArray`s.
+on CPUs as shown above.
+
+Recently GPU support has been added. Whenever `evaluate` is called
+with `CuArray`s, the computation will automatically be done with the CUDA
+version of libxc. Currently only CUDA 11 is supported,
+so you need to enforce using CUDA 11 explicitly:
+```julia
+using CUDA
+CUDA.set_runtime_version!(v"11.8")
+```
 
 Hybrid or range-separated hybrids and VV10-type functionals
 export parameters required in the host programs as properties of the `Functional`
