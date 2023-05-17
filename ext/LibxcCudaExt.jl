@@ -1,6 +1,14 @@
 module LibxcCudaExt
-using CUDA
 import Libxc_GPU_jll
+
+# Extension module compatibility
+if isdefined(Base, :get_extension)
+    using Libxc: Libxc, xc_func_type, Functional
+    using CUDA
+else
+    using ..Libxc: Libxc, xc_func_type, Functional
+    using ..CUDA
+end
 
 function __init__()
     if !Libxc_GPU_jll.is_available() && CUDA.runtime_version() ≥ v"12"
@@ -10,11 +18,6 @@ function __init__()
 end
 
 if Libxc_GPU_jll.is_available()
-
-# Extension module compatibility
-isdefined(Base, :get_extension) ? (using   Libxc: Libxc, xc_func_type, Functional) :
-                                  (using ..Libxc: Libxc, xc_func_type, Functional)
-
 const libxc_gpu  = Libxc_GPU_jll.libxc
 const CuArray    = CUDA.CuArray
 const CuPtr      = CUDA.CuPtr
