@@ -24,8 +24,11 @@ julia/1.9-n2:
         Pkg.add("CUDA");
         using CUDA;
         Pkg.activate(".");
-        CUDA.set_runtime_version!("local");
-        CUDA.versioninfo()
+        CUDA.set_runtime_version!("v11.8");
+      '
+    - julia --color=yes --project=. -e '
+        using CUDA;
+        CUDA.versioninfo();
       '
     - julia --color=yes --project=. -e '
         using Pkg;
