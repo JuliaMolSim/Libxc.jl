@@ -1,7 +1,7 @@
 module Libxc
 using Libxc_jll: libxc
 import Libxc_GPU_jll
-using Requires
+using Requires  # Only needed in Julia < 1.9
 
 include("gen/common.jl")
 include("gen/api.jl")
@@ -33,12 +33,13 @@ export Functional, evaluate, evaluate!, supported_derivatives
 export is_lda, is_gga, is_mgga, is_hybrid, is_vv10, is_range_separated, is_global_hybrid
 export needs_laplacian
 
-function __init__()
-    @require CUDA="052768ef-5323-5732-b1bb-66c8b64840ba" begin
-        @static if Libxc_GPU_jll.is_available()
-            include("evaluate_gpu.jl")
+# Requires-based dependency management for Julia < 1.9
+if !isdefined(Base, :get_extension)
+    function __init__()
+        @require CUDA="052768ef-5323-5732-b1bb-66c8b64840ba" begin
+            include("../ext/LibxcCudaExt.jl")
         end
     end
 end
 
-end # module
+end  # module

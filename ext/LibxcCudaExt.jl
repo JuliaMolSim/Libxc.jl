@@ -1,9 +1,14 @@
+module LibxcCudaExt
 import Libxc_GPU_jll
-const libxc_gpu  = Libxc_GPU_jll.libxc
+@static if Libxc_GPU_jll.is_available()
 
-const CuArray = CUDA.CuArray
-const CuPtr   = CUDA.CuPtr
-const CU_NULL = CUDA.CU_NULL
+# Extension module compatibility
+isdefined(Base, :get_extension) ? (using Libxc: evaluate!) : (using ..Libxc: evaluate!)
+
+const libxc_gpu  = Libxc_GPU_jll.libxc
+const CuArray    = CUDA.CuArray
+const CuPtr      = CUDA.CuPtr
+const CU_NULL    = CUDA.CU_NULL
 const OptCuArray = Union{CuArray{Float64}, CuPtr{Nothing}}
 
 function allocate_gpufunctional(identifier::Symbol, n_spin::Integer)
@@ -192,3 +197,6 @@ function evaluate!(func::Functional, ::Union{Val{:mgga},Val{:hyb_mgga}}, rho::Cu
     )::Cvoid
     deallocate_gpufunctional(pointer)
 end
+
+end  # @static if
+end  # module
