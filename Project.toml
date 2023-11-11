@@ -1,14 +1,14 @@
 authors = ["Jason Eu <morty.yu@yahoo.com>", "Michael F. Herbst <info@michael-herbst.com>"]
 name = "Libxc"
 uuid = "66e17ffc-8502-11e9-23b5-c9248d0eb96d"
-version = "0.3.15"
+version = "0.3.16"
 
 [compat]
-CUDA = "4"
+CUDA = "5"
 Libxc_GPU_jll = "6"
 Libxc_jll = "6"
 Requires = "1"
-julia = "1.7"
+julia = "1.8"
 
 [deps]
 Libxc_GPU_jll = "25af9330-9b41-55d4-a324-1a83c0a0a1ac"
