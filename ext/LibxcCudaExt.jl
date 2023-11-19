@@ -11,9 +11,12 @@ else
 end
 
 function __init__()
-    if !Libxc_GPU_jll.is_available() && CUDA.runtime_version() ≥ v"12"
-        @warn("Libxc_GPU_jll currently not available for CUDA 12. " *
-              """Please use CUDA 11 for GPU support (i.e. `CUDA.set_runtime_version!(v"11.8")`)""")
+    if CUDA.functional()
+        if !Libxc_GPU_jll.is_available() && CUDA.runtime_version() ≥ v"12"
+            @warn("Libxc_GPU_jll currently not available for CUDA 12. " *
+                  "Please use CUDA 11 for GPU support " *
+                  """(i.e. `CUDA.set_runtime_version!(v"11.8")`)""")
+        end
     end
 end
 
