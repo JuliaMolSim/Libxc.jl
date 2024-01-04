@@ -8,13 +8,13 @@ using Libxc
 
     # LDA
     lda_x = Functional(:lda_x)
-    result = evaluate(lda_x, rho=rho, derivatives=0).zk
-    @test result ≈ [-0.342809, -0.431912, -0.494416, -0.544175, -0.586194] atol=1e-5
+    result = evaluate(lda_x, rho=rho, derivatives=0:1)
+    @test result.zk ≈ [-0.342809, -0.431912, -0.494416, -0.544175, -0.586194] atol=1e-5
 
     # GGA
     gga_x = Functional(:gga_x_pbe)
-    result = evaluate(gga_x, rho=rho, sigma=sigma, derivatives=0).zk
-    @test result ≈ [-0.452598, -0.478878, -0.520674, -0.561428, -0.598661] atol=1e-5
+    result = evaluate(gga_x, rho=rho, sigma=sigma, derivatives=0:1)
+    @test result.zk ≈ [-0.452598, -0.478878, -0.520674, -0.561428, -0.598661] atol=1e-5
 end
 
 @testset "Hybrid LDA and Hybrid GGA evaluate" begin
@@ -24,13 +24,13 @@ end
 
     # LDA
     hyb_lda_xc = Functional(:hyb_lda_xc_bn05)
-    result = evaluate(hyb_lda_xc, rho=rho, derivatives=0).zk
-    @test result ≈ [-0.162837, -0.234719, -0.286980, -0.329442, -0.365816] atol=1e-5
+    result = evaluate(hyb_lda_xc, rho=rho, derivatives=0:1)
+    @test result.zk ≈ [-0.162837, -0.234719, -0.286980, -0.329442, -0.365816] atol=1e-5
 
     # GGA
     gga_x = Functional(:hyb_gga_x_s12h)
-    result = evaluate(gga_x, rho=rho, sigma=sigma, derivatives=0).zk
-    @test result ≈ [-0.350425, -0.362603, -0.389472, -0.421598, -0.452075] atol=1e-5
+    result = evaluate(gga_x, rho=rho, sigma=sigma, derivatives=0:1)
+    @test result.zk ≈ [-0.350425, -0.362603, -0.389472, -0.421598, -0.452075] atol=1e-5
 end
 
 @testset "LDA and GGA evaluate!" begin
