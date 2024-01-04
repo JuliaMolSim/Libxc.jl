@@ -30,8 +30,8 @@ const ARGUMENTS = Dict(
 
 # Hybrid or not, the arguments are the same
 ARGUMENTS[:hyb_lda] = ARGUMENTS[:lda]
-ARGUMENTS[:hyb_gga] = ARGUMENTS[:lda]
-ARGUMENTS[:hyb_mgga] = ARGUMENTS[:lda]
+ARGUMENTS[:hyb_gga] = ARGUMENTS[:gga]
+ARGUMENTS[:hyb_mgga] = ARGUMENTS[:mgga]
 
 const INPUT = Dict(
     :lda => [:rho],
