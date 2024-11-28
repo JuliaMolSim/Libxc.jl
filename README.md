@@ -16,7 +16,7 @@
 [license-url]: https://github.com/JuliaMolSim/Libxc.jl/blob/master/LICENSE
 
 This package provides Julia bindings to the
-[libxc](https://tddft.org/programs/libxc/) library
+[libxc](https://libxc.gitlab.io/) library
 for common exchange-correlation functionals in density-functional theory.
 At least **Julia 1.8** is required.
 
