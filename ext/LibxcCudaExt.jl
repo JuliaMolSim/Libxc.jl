@@ -147,7 +147,6 @@ function Libxc.evaluate!(func::Functional, ::Union{Val{:mgga},Val{:hyb_mgga}}, r
                    v4lapltau3::OptCuArray=CU_NULL,
                    v4tau4::OptCuArray=CU_NULL)
     np = Int(length(rho) / func.spin_dimensions.rho)
-    @warn "meta-GGAs on GPU seem to be broken at least with Libxc 7.0.0"
 
     pointer = allocate_gpufunctional(func)
     @ccall libxc_gpu.xc_mgga(
