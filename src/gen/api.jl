@@ -1,7 +1,3 @@
-# Julia wrapper for header: xc.h
-# Automatically generated using Clang.jl
-
-
 function xc_reference()
     ccall((:xc_reference, libxc), Ptr{Cchar}, ())
 end
@@ -146,12 +142,28 @@ function xc_func_set_tau_threshold(p, t_tau)
     ccall((:xc_func_set_tau_threshold, libxc), Cvoid, (Ptr{xc_func_type}, Cdouble), p, t_tau)
 end
 
+function xc_func_set_fhc_enforcement(p, on)
+    ccall((:xc_func_set_fhc_enforcement, libxc), Cvoid, (Ptr{xc_func_type}, Cint), p, on)
+end
+
 function xc_func_set_ext_params(p, ext_params)
     ccall((:xc_func_set_ext_params, libxc), Cvoid, (Ptr{xc_func_type}, Ptr{Cdouble}), p, ext_params)
 end
 
+function xc_func_get_ext_params(p, ext_params)
+    ccall((:xc_func_get_ext_params, libxc), Cvoid, (Ptr{xc_func_type}, Ptr{Cdouble}), p, ext_params)
+end
+
 function xc_func_set_ext_params_name(p, name, par)
     ccall((:xc_func_set_ext_params_name, libxc), Cvoid, (Ptr{xc_func_type}, Ptr{Cchar}, Cdouble), p, name, par)
+end
+
+function xc_func_get_ext_params_name(p, name)
+    ccall((:xc_func_get_ext_params_name, libxc), Cdouble, (Ptr{xc_func_type}, Ptr{Cchar}), p, name)
+end
+
+function xc_func_get_ext_params_value(p, number)
+    ccall((:xc_func_get_ext_params_value, libxc), Cdouble, (Ptr{xc_func_type}, Cint), p, number)
 end
 
 function xc_lda_new(p, order, np, rho, out)
@@ -160,6 +172,10 @@ end
 
 function xc_gga_new(p, order, np, rho, sigma, out)
     ccall((:xc_gga_new, libxc), Cvoid, (Ptr{xc_func_type}, Cint, Csize_t, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{xc_gga_out_params}), p, order, np, rho, sigma, out)
+end
+
+function xc_mgga_new(func, order, np, rho, sigma, lapl, tau, out)
+    ccall((:xc_mgga_new, libxc), Cvoid, (Ptr{xc_func_type}, Cint, Csize_t, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{xc_mgga_out_params}), func, order, np, rho, sigma, lapl, tau, out)
 end
 
 function xc_lda(p, np, rho, zk, vrho, v2rho2, v3rho3, v4rho4)

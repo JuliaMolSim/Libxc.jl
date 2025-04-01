@@ -55,9 +55,9 @@ end
         res_d   = evaluate(Functional(sym; n_spin);
                            rho=rho_d, sigma=sigma_d, tau=tau_d)
 
-        @test_broken maximum(abs, res.zk     - Array(res_d.zk))     < 1e-12
-        @test_broken maximum(abs, res.vrho   - Array(res_d.vrho))   < 1e-12
-        @test_broken maximum(abs, res.vsigma - Array(res_d.vsigma)) < 1e-12
-        @test_broken maximum(abs, res.vtau   - Array(res_d.vtau))   < 1e-12
+        @test maximum(abs, res.zk     - Array(res_d.zk))     < 1e-12
+        @test maximum(abs, res.vrho   - Array(res_d.vrho))   < 1e-12
+        @test maximum(abs, res.vsigma - Array(res_d.vsigma)) < 1e-12
+        @test maximum(abs, res.vtau   - Array(res_d.vtau))   < 1e-12
     end
 end

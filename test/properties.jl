@@ -21,7 +21,7 @@ end
     @test !is_gga(lda)
     @test !is_mgga(lda)
     @test lda.family == :lda
-    @test sort(lda.flags) == sort([:vxc, :dim3, :fxc, :exc])
+    @test sort(lda.flags) == sort([:vxc, :enforce_fhc, :dim3, :fxc, :exc])
     @test lda.kind == :exchange
     @test lda.name == "Slater exchange"
     @test lda.n_spin == 2
@@ -74,6 +74,7 @@ end
     @test scan_vv10.nlc_b == 14.0
     @test scan_vv10.nlc_C == 0.0093
     @test !needs_laplacian(scan_vv10)
+    @test needs_tau(scan_vv10)
 
     # ωB97 functional
     ωB97 = Functional(:xc_hyb_gga_xc_wb97)

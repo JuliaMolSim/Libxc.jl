@@ -1,24 +1,7 @@
 module LibxcCudaExt
 import Libxc_GPU_jll
-
-# Extension module compatibility
-if isdefined(Base, :get_extension)
-    using Libxc: Libxc, xc_func_type, Functional
-    using CUDA
-else
-    using ..Libxc: Libxc, xc_func_type, Functional
-    using ..CUDA
-end
-
-function __init__()
-    if CUDA.functional()
-        if !Libxc_GPU_jll.is_available() && CUDA.runtime_version() ≥ v"12"
-            @warn("Libxc_GPU_jll currently not available for CUDA 12. " *
-                  "Please use CUDA 11 for GPU support " *
-                  """(i.e. `CUDA.set_runtime_version!(v"11.8")`)""")
-        end
-    end
-end
+using Libxc: Libxc, xc_func_type, Functional
+using CUDA
 
 if Libxc_GPU_jll.is_available()
 const libxc_gpu  = Libxc_GPU_jll.libxc
@@ -164,7 +147,6 @@ function Libxc.evaluate!(func::Functional, ::Union{Val{:mgga},Val{:hyb_mgga}}, r
                    v4lapltau3::OptCuArray=CU_NULL,
                    v4tau4::OptCuArray=CU_NULL)
     np = Int(length(rho) / func.spin_dimensions.rho)
-    @warn "meta-GGAs on GPU seem to be broken at least with Libxc 6.1.0"
 
     pointer = allocate_gpufunctional(func)
     @ccall libxc_gpu.xc_mgga(
