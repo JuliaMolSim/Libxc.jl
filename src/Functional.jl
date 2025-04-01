@@ -101,6 +101,9 @@ is_global_hybrid(func::Functional) = is_hybrid(func) && !is_range_separated(func
 """Does the function need the laplacian of the density"""
 needs_laplacian(func::Functional) = :needs_laplacian in func.flags
 
+"""Does the function need the kinetic energy density"""
+needs_tau(func::Functional) = :needs_tau in func.flags
+
 
 # Supported properties:
 #     - density_threshold  Density threshold below which functional will not be evaluated
@@ -214,6 +217,8 @@ const FLAGMAP = Dict(
     XC_FLAGS_STABLE          => :stable,
     XC_FLAGS_DEVELOPMENT     => :development,
     XC_FLAGS_NEEDS_LAPLACIAN => :needs_laplacian,
+    XC_FLAGS_NEEDS_TAU       => :needs_tau,
+    XC_FLAGS_ENFORCE_FHC     => :enforce_fhc,
 )
 
 

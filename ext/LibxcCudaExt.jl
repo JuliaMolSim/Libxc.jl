@@ -10,16 +10,6 @@ else
     using ..CUDA
 end
 
-function __init__()
-    if CUDA.functional()
-        if !Libxc_GPU_jll.is_available() && CUDA.runtime_version() ≥ v"12"
-            @warn("Libxc_GPU_jll currently not available for CUDA 12. " *
-                  "Please use CUDA 11 for GPU support " *
-                  """(i.e. `CUDA.set_runtime_version!(v"11.8")`)""")
-        end
-    end
-end
-
 if Libxc_GPU_jll.is_available()
 const libxc_gpu  = Libxc_GPU_jll.libxc
 const CuArray    = CUDA.CuArray
@@ -164,7 +154,7 @@ function Libxc.evaluate!(func::Functional, ::Union{Val{:mgga},Val{:hyb_mgga}}, r
                    v4lapltau3::OptCuArray=CU_NULL,
                    v4tau4::OptCuArray=CU_NULL)
     np = Int(length(rho) / func.spin_dimensions.rho)
-    @warn "meta-GGAs on GPU seem to be broken at least with Libxc 6.1.0"
+    @warn "meta-GGAs on GPU seem to be broken at least with Libxc 7.0.0"
 
     pointer = allocate_gpufunctional(func)
     @ccall libxc_gpu.xc_mgga(
