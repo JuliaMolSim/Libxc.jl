@@ -1,13 +1,10 @@
 # Libxc.jl
 
-| **Build Status**                                                      |  **License**                     |
-|:--------------------------------------------------------------------- |:-------------------------------- |
-| ![][ci-img] [![][cigpu-img]][cigpu-url] [![][ccov-img]][ccov-url]  | [![][license-img]][license-url]  |
+| **Build Status**                       |  **License**                     |
+|:-------------------------------------- |:-------------------------------- |
+| ![][ci-img] [![][ccov-img]][ccov-url]  | [![][license-img]][license-url]  |
 
 [ci-img]: https://github.com/JuliaMolSim/Libxc.jl/workflows/CI/badge.svg
-
-[cigpu-img]: https://git.uni-paderborn.de/herbstm/Libxc.jl/badges/master/pipeline.svg?key_text=GPU%20CI
-[cigpu-url]: https://git.uni-paderborn.de/herbstm/Libxc.jl/-/pipelines
 
 [ccov-img]: https://codecov.io/gh/JuliaMolSim/Libxc.jl/branch/master/graph/badge.svg?token=ZL7RUND4YE
 [ccov-url]: https://codecov.io/gh/JuliaMolSim/Libxc.jl
@@ -18,7 +15,7 @@
 This package provides Julia bindings to the
 [libxc](https://libxc.gitlab.io/) library
 for common exchange-correlation functionals in density-functional theory.
-At least **Julia 1.8** is required.
+At least **Julia 1.10** is required.
 
 ## Usage
 Install the library from Julia as usual:
@@ -50,12 +47,7 @@ result = evaluate(gga_x, rho=rho, sigma=sigma, derivative=0)
 ## GPU support
 Recently GPU support has been added. Whenever `evaluate` is called
 with `CuArray`s, the computation will automatically be done with the CUDA
-version of libxc. Currently only CUDA 11 is supported,
-so you need to enforce using CUDA 11 explicitly:
-```julia
-using CUDA
-CUDA.set_runtime_version!(v"11.8")
-```
+version of libxc.
 
 ## Status
 Full support for evaluating LDA, GGA and meta-GGA functionals

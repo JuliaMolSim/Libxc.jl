@@ -21,7 +21,7 @@ end
     @test !is_gga(lda)
     @test !is_mgga(lda)
     @test lda.family == :lda
-    @test sort(lda.flags) == sort([:vxc, :dim3, :fxc, :exc])
+    @test sort(lda.flags) == sort([:vxc, :enforce_fhc, :dim3, :fxc, :exc])
     @test lda.kind == :exchange
     @test lda.name == "Slater exchange"
     @test lda.n_spin == 2
