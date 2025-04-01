@@ -1,14 +1,7 @@
 module LibxcCudaExt
 import Libxc_GPU_jll
-
-# Extension module compatibility
-if isdefined(Base, :get_extension)
-    using Libxc: Libxc, xc_func_type, Functional
-    using CUDA
-else
-    using ..Libxc: Libxc, xc_func_type, Functional
-    using ..CUDA
-end
+using Libxc: Libxc, xc_func_type, Functional
+using CUDA
 
 if Libxc_GPU_jll.is_available()
 const libxc_gpu  = Libxc_GPU_jll.libxc
