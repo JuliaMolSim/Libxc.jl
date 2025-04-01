@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ['1.8']
+        version: ['1.10']
         os:
           - ubuntu-latest
           - macOS-latest
