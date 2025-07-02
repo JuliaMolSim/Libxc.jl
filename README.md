@@ -39,7 +39,7 @@ result = evaluate(lda_x, rho=rho)
 
 # GGA exchange
 gga_x = Functional(:gga_x_pbe, n_spin=1)
-result = evaluate(gga_x, rho=rho, sigma=sigma, derivative=0)
+result = evaluate(gga_x, rho=rho, sigma=sigma, derivatives=0)
 @show result
 # result = (zk = [-0.452597, -0.478877, -0.520674, -0.561427, -0.598661],)
 ```
