@@ -47,8 +47,10 @@ result = evaluate(gga_x, rho=rho, sigma=sigma, derivatives=0)
 ## GPU support
 Recently GPU support has been added. Whenever `evaluate` is called
 with `CuArray`s, the computation will automatically be done with the CUDA
-version of libxc. Currently, CUDA 13 is not yet supported. You need
-to enforce the use of an earlier CUDA version with, for example,
+version of libxc. Due to delays in the BinaryBuilder / Yggdrasil infrastructure
+it often happens that the most recent CUDA version (shipped by default
+in CUDA.jl) is not yet supported. In this case using the package will throw
+a warning and you should manually set the CUDA version to a lower version, for example,
 ```julia
 using CUDA
 CUDA.set_runtime_version!(v"12.8")
