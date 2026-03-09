@@ -3,6 +3,16 @@ import Libxc_GPU_jll
 using Libxc: Libxc, xc_func_type, Functional
 using CUDA
 
+function __init__()
+    if CUDA.functional()
+        if !Libxc_GPU_jll.is_available() && CUDA.runtime_version() > v"13.1"
+            @warn("Libxc_GPU_jll currently not available for CUDA > v13.1." *
+                  "Please use a lower version of CUDA for support." *
+                  """(e.g. `CUDA.set_runtime_version!(v"12.8")`)""")
+        end
+    end
+end
+
 if Libxc_GPU_jll.is_available()
 const libxc_gpu  = Libxc_GPU_jll.libxc
 const CuArray    = CUDA.CuArray

@@ -39,7 +39,7 @@ result = evaluate(lda_x, rho=rho)
 
 # GGA exchange
 gga_x = Functional(:gga_x_pbe, n_spin=1)
-result = evaluate(gga_x, rho=rho, sigma=sigma, derivative=0)
+result = evaluate(gga_x, rho=rho, sigma=sigma, derivatives=0)
 @show result
 # result = (zk = [-0.452597, -0.478877, -0.520674, -0.561427, -0.598661],)
 ```
@@ -47,7 +47,14 @@ result = evaluate(gga_x, rho=rho, sigma=sigma, derivative=0)
 ## GPU support
 Recently GPU support has been added. Whenever `evaluate` is called
 with `CuArray`s, the computation will automatically be done with the CUDA
-version of libxc.
+version of libxc. Due to delays in the BinaryBuilder / Yggdrasil infrastructure
+it often happens that the most recent CUDA version (shipped by default
+in CUDA.jl) is not yet supported. In this case using the package will throw
+a warning and you should manually set the CUDA version to a lower version, for example,
+```julia
+using CUDA
+CUDA.set_runtime_version!(v"12.8")
+```
 
 ## Status
 Full support for evaluating LDA, GGA and meta-GGA functionals
