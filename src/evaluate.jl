@@ -245,7 +245,7 @@ function evaluate!(func::Functional, ::Union{Val{:mgga},Val{:hyb_mgga}}, rho::Ar
                    v4lapltau3::OptArray=C_NULL,
                    v4tau4::OptArray=C_NULL)
     # check if the mGGA functional needs tau or lapl
-    needs_tau(func) && tau === C_NULL && throw(ArgumentError("Functional $(func.identifier) requires tau"))
+    needs_tau(func)       && tau  === C_NULL && throw(ArgumentError("Functional $(func.identifier) requires tau"))
     needs_laplacian(func) && lapl === C_NULL && throw(ArgumentError("Functional $(func.identifier) requires lapl"))
     np = Int(length(rho) / func.spin_dimensions.rho)
     xc_mgga(func.pointer_, np, rho, sigma, lapl, tau, zk, vrho, vsigma, vlapl, vtau,
