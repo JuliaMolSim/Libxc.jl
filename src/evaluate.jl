@@ -5,7 +5,8 @@ orders, e.g. `0:1` (the default) for the energy and potential, `0:0` for just th
 energy and so on.
 The required input arguments depend on the functional type (`rho` for all functionals,
 `sigma` for GGA and mGGA, `tau` and `lapl` for mGGA). Obtained data is returned
-as a named tuple.
+as a named tuple. Keyword arguments  which are set to `nothing` are being ignored,
+e.g. you can pass `tau=nothing` for GGA or laplace-only mGGA functionals.
 """
 function evaluate(func::Functional; derivatives::AbstractArray=0:1, rho::AbstractArray, kwargs...)
     @assert all(0 .≤ derivatives .≤ 4)
@@ -54,11 +55,14 @@ end
 Evaluate a functional and store results in passed arrays. If for a particular
 quantity no array is passed, it is not computed. Required input arguments
 depend on the functional type (`rho` for all functionals, `sigma` for GGA and mGGA,
-`tau` and `lapl` for mGGA).
+`tau` and `lapl` for mGGA). Keyword arguments which are set to `nothing` are being
+ignored, e.g. you can pass `tau=nothing` for GGA or laplace-only mGGA functionals.
 """
 function evaluate!(func::Functional; rho::AbstractArray, kwargs...)
-    n_p = div(length(rho), func.spin_dimensions.rho)
+    # Remove nothing values
+    kwargs = filter(argval -> !isnothing(last(argval)), kwargs)
 
+    n_p = div(length(rho), func.spin_dimensions.rho)
     max_derivative_order = -1
     for (argument, value) in kwargs
         n_spin = getfield(func.spin_dimensions, argument)

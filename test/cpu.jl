@@ -172,6 +172,17 @@ end
     @test iszero(vlapl)
 end
 
+@testset "evaluate! with nothing arguments" begin
+    rho    = [0.1, 0.2, 0.3, 0.4, 0.5]
+    sigma  = [0.2, 0.3, 0.4, 0.5, 0.6]
+    tau    = [0.5, 0.4, 0.3, 0.2, 0.1]
+    result = zeros(Float64, 5)
+
+    scan_x = Functional(:mgga_x_r2scan, n_spin=1)
+    evaluate!(scan_x; rho, sigma, tau, lapl=nothing, zk=result)
+    @test result ≈ [-0.31566211, -0.44062981, -0.55769065, -0.63428432, -0.68815217] atol=1e-6
+end
+
 @testset "evaluate! with invalid arguments" begin
     rho   = [0.1, 0.2, 0.3, 0.4, 0.5]
     func  = Functional(:lda_x)
@@ -187,6 +198,9 @@ end
     # Spin dimension mismatch
     @test_throws ArgumentError evaluate(spfun; rho=randn(5, 2))
     @test_throws DimensionMismatch evaluate(spfun; rho=randn(2, 3, 5), sigma=(2, 3, 5))
+
+    # Nothing where something should be supplied
+    @test_throws ArgumentError evaluate(spfun; rho, sigma=nothing)
 end
 
 @testset "Custom evaluate! dispatch" begin
