@@ -1,6 +1,15 @@
 using Test
 using Libxc
 
+@testset "get_derivative_order" begin
+    @test Libxc.get_derivative_order(:sigma)  == -1
+    @test Libxc.get_derivative_order(:zk)     ==  0
+    @test Libxc.get_derivative_order(:vsigma) ==  1
+    @test Libxc.get_derivative_order(:v2rho2) ==  2
+    @test Libxc.get_derivative_order(:v2sigmatau) ==  2
+    @test Libxc.get_derivative_order(:v3rhotau2)  ==  3
+end
+
 @testset "LDA and GGA evaluate" begin
     rho = [0.1, 0.2, 0.3, 0.4, 0.5]
     sigma = [0.2, 0.3, 0.4, 0.5, 0.6]
@@ -8,12 +17,12 @@ using Libxc
 
     # LDA
     lda_x = Functional(:lda_x)
-    result = evaluate(lda_x, rho=rho, derivatives=0:1)
+    result = evaluate(lda_x; rho, derivatives=0:1)
     @test result.zk ≈ [-0.342809, -0.431912, -0.494416, -0.544175, -0.586194] atol=1e-5
 
     # GGA
     gga_x = Functional(:gga_x_pbe)
-    result = evaluate(gga_x, rho=rho, sigma=sigma, derivatives=0:1)
+    result = evaluate(gga_x; rho, sigma, derivatives=0:1)
     @test result.zk ≈ [-0.452598, -0.478878, -0.520674, -0.561428, -0.598661] atol=1e-5
 end
 
@@ -24,12 +33,12 @@ end
 
     # LDA
     hyb_lda_xc = Functional(:hyb_lda_xc_bn05)
-    result = evaluate(hyb_lda_xc, rho=rho, derivatives=0:1)
+    result = evaluate(hyb_lda_xc; rho, derivatives=0:1)
     @test result.zk ≈ [-0.162837, -0.234719, -0.286980, -0.329442, -0.365816] atol=1e-5
 
     # GGA
     gga_x = Functional(:hyb_gga_x_s12h)
-    result = evaluate(gga_x, rho=rho, sigma=sigma, derivatives=0:1)
+    result = evaluate(gga_x; rho, sigma, derivatives=0:1)
     @test result.zk ≈ [-0.350425, -0.362603, -0.389472, -0.421598, -0.452075] atol=1e-5
 end
 
@@ -40,12 +49,12 @@ end
 
     # LDA
     func = Functional(:lda_x)
-    evaluate!(func, rho=rho, zk=result)
+    evaluate!(func; rho, zk=result)
     @test result ≈ [-0.342809, -0.431912, -0.494416, -0.544175, -0.586194] atol=1e-5
 
     # GGA
     func = Functional(:gga_x_pbe)
-    evaluate!(func, rho=rho, sigma=sigma, zk=result)
+    evaluate!(func; rho, sigma, zk=result)
     @test result ≈ [-0.452598, -0.478878, -0.520674, -0.561428, -0.598661] atol=1e-5
 end
 
@@ -137,7 +146,7 @@ end
     result = zeros(Float64, 5)
 
     tpss_x = Functional(:mgga_x_tpss, n_spin=1)
-    evaluate!(tpss_x, rho=rho, sigma=sigma, tau=tau, zk=result)
+    evaluate!(tpss_x; rho, sigma, tau, zk=result)
     @test result ≈ [-0.4254894, -0.4685985, -0.5341998, -0.6017734, -0.6646443] atol=1e-6
 end
 
@@ -164,14 +173,20 @@ end
 end
 
 @testset "evaluate! with invalid arguments" begin
-    rho = [0.1, 0.2, 0.3, 0.4, 0.5]
-    func = Functional(:lda_x)
+    rho   = [0.1, 0.2, 0.3, 0.4, 0.5]
+    func  = Functional(:lda_x)
+    spfun = Functional(:gga_x_pbe; n_spin=2)
 
     # Derivatives ≥ 3 not compiled into libxc at the moment
-    @test_throws ArgumentError evaluate(func, rho=rho, derivatives=0:3)
-    @test_throws ArgumentError evaluate!(func, rho=rho, v3rho3=randn(5))
+    @test_throws ArgumentError evaluate(func; rho, derivatives=0:3)
+    @test_throws ArgumentError evaluate!(func; rho, v3rho3=randn(5))
 
-    @test_throws DimensionMismatch evaluate!(func, rho=rho, zk=randn(2))
+    @test_throws DimensionMismatch evaluate!(func; rho, zk=randn(2))  # zk grid too small
+    @test_throws ArgumentError evaluate(spfun; rho=randn(3))  # Rho not divisible by spin
+
+    # Spin dimension mismatch
+    @test_throws ArgumentError evaluate(spfun; rho=randn(5, 2))
+    @test_throws DimensionMismatch evaluate(spfun; rho=randn(2, 3, 5), sigma=(2, 3, 5))
 end
 
 @testset "Custom evaluate! dispatch" begin
@@ -185,7 +200,7 @@ end
     result = zeros(Float32, 5)
     func = Functional(:lda_x)
 
-    res = evaluate(func, rho=rho, derivatives=0)
+    res = evaluate(func; rho, derivatives=0:0)
     @test eltype(res.zk) == Float32
     @test eltype(res.zk) == Float32
     @test res.zk ≈ [-0.342809, -0.431912, -0.494416, -0.544175, -0.586194] atol=1e-5

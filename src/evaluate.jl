@@ -1,57 +1,3 @@
-# The required / allowed input and output arguments per functional family
-# :input refers to input argument and numbers to the derivative order
-const ARGUMENTS = Dict(
-    :lda => [[:zk], [:vrho], [:v2rho2], [:v3rho3], [:v4rho4], ],
-    :gga => [
-        [:zk],
-        [:vrho, :vsigma],
-        [:v2rho2, :v2rhosigma, :v2sigma2],
-        [:v3rho3, :v3rho2sigma, :v3rhosigma2, :v3sigma3],
-        [:v4rho4, :v4rho3sigma, :v4rho2sigma2, :v4rhosigma3, :v4sigma4],
-    ],
-    :mgga => [
-        [:zk],
-        [:vrho, :vsigma, :vlapl, :vtau],
-        [:v2rho2, :v2rhosigma, :v2rholapl, :v2rhotau, :v2sigma2, :v2sigmalapl,
-         :v2sigmatau, :v2lapl2, :v2lapltau, :v2tau2],
-        [:v3rho3, :v3rho2sigma, :v3rho2lapl, :v3rho2tau, :v3rhosigma2, :v3rhosigmalapl,
-         :v3rhosigmatau, :v3rholapl2, :v3rholapltau, :v3rhotau2, :v3sigma3, :v3sigma2lapl,
-         :v3sigma2tau, :v3sigmalapl2, :v3sigmalapltau, :v3sigmatau2, :v3lapl3,
-         :v3lapl2tau, :v3lapltau2, :v3tau3],
-        [:v4rho4, :v4rho3sigma, :v4rho3lapl, :v4rho3tau, :v4rho2sigma2, :v4rho2sigmalapl,
-         :v4rho2sigmatau, :v4rho2lapl2, :v4rho2lapltau, :v4rho2tau2, :v4rhosigma3,
-         :v4rhosigma2lapl, :v4rhosigma2tau, :v4rhosigmalapl2, :v4rhosigmalapltau,
-         :v4rhosigmatau2, :v4rholapl3, :v4rholapl2tau, :v4rholapltau2, :v4rhotau3,
-         :v4sigma4, :v4sigma3lapl, :v4sigma3tau, :v4sigma2lapl2, :v4sigma2lapltau,
-         :v4sigma2tau2, :v4sigmalapl3, :v4sigmalapl2tau, :v4sigmalapltau2, :v4sigmatau3,
-         :v4lapl4, :v4lapl3tau, :v4lapl2tau2, :v4lapltau3, :v4tau4],
-     ],
-)
-
-# Hybrid or not, the arguments are the same
-ARGUMENTS[:hyb_lda] = ARGUMENTS[:lda]
-ARGUMENTS[:hyb_gga] = ARGUMENTS[:gga]
-ARGUMENTS[:hyb_mgga] = ARGUMENTS[:mgga]
-
-const INPUT = Dict(
-    :lda => [:rho],
-    :gga => [:rho, :sigma],
-    :mgga => [:rho, :sigma, :lapl, :tau],
-)
-
-# Hybrid or not, the inputs are the same
-INPUT[:hyb_lda] = INPUT[:lda]
-INPUT[:hyb_gga] = INPUT[:gga]
-INPUT[:hyb_mgga] = INPUT[:mgga]
-
-function derivative_flag(family, argument)
-    flags = (:exc, :vxc, :fxc, :kxc, :lxc)  # flags for having 0th to 4th derivative
-    for (i, arglist) in enumerate(ARGUMENTS[family])
-        (argument in arglist) && return (i - 1, flags[i])
-    end
-    (-1, :unknown)
-end
-
 """
 Evaluate a functional obtaining the energy and / or certain derivatives of it.
 What is returned depends on `derivatives`, which should be a range of derivative
@@ -61,7 +7,7 @@ The required input arguments depend on the functional type (`rho` for all functi
 `sigma` for GGA and mGGA, `tau` and `lapl` for mGGA). Obtained data is returned
 as a named tuple.
 """
-function evaluate(func::Functional; derivatives=0:1, rho::AbstractArray, kwargs...)
+function evaluate(func::Functional; derivatives::AbstractArray=0:1, rho::AbstractArray, kwargs...)
     @assert all(0 .≤ derivatives .≤ 4)
     if !all(d in supported_derivatives(func) for d in derivatives)
         throw(ArgumentError("Functional $(func.identifier) does only support derivatives " *
@@ -72,22 +18,23 @@ function evaluate(func::Functional; derivatives=0:1, rho::AbstractArray, kwargs.
     # Determine the gridshape (i.e. the shape of the grid points without the spin components)
     if ndims(rho) > 1
         if size(rho, 1) != func.spin_dimensions.rho
-            error("First axis for multidimensional rho array should be equal " *
-                  "to the number of spin components (== $(func.spin_dimensions.rho))")
+            throw(ArgumentError("First axis for multidimensional rho array should be equal " *
+                                "to the number of spin components (== " * 
+                                "$(func.spin_dimensions.rho))"))
         end
         gridshape = size(rho)[2:end]
     else
         if mod(length(rho), func.spin_dimensions.rho) != 0
-            error("Length of linear rho array should be divisible by number of spin " *
-                  "components in rho (== $(func.spin_dimensions.rho)).")
+            throw(ArgumentError("Length of linear rho array should be divisible by number " *
+                                "of spin components in rho (== $(func.spin_dimensions.rho))."))
         end
-        gridshape = (Int(length(rho) / func.spin_dimensions.rho), )
+        gridshape = (div(length(rho), func.spin_dimensions.rho) )
     end
 
     # Output arguments, where memory is already allocated
     outargs_allocated = Dict{Symbol, AbstractArray}()
     outargs = Dict{Symbol, AbstractArray}()
-    for symbol in vcat(ARGUMENTS[func.family][1 .+ derivatives]...)
+    for symbol in reduce(vcat, get_evaluate_arguments.(Ref(func), derivatives))
         if symbol in keys(kwargs)
             outargs_allocated[symbol] = kwargs[symbol]
         elseif symbol == :zk  # For zk keep just the grid shape
@@ -98,7 +45,7 @@ function evaluate(func::Functional; derivatives=0:1, rho::AbstractArray, kwargs.
         end
     end
 
-    evaluate!(func; rho=rho, kwargs..., outargs...)
+    evaluate!(func; rho, kwargs..., outargs...)
     (; outargs..., outargs_allocated...)
 end
 
@@ -110,33 +57,89 @@ depend on the functional type (`rho` for all functionals, `sigma` for GGA and mG
 `tau` and `lapl` for mGGA).
 """
 function evaluate!(func::Functional; rho::AbstractArray, kwargs...)
-    mod(length(rho), func.spin_dimensions.rho) != 0 && error(
-        "Length of rho array should be divisible by number of spin " *
-        "components in rho (== $(func.spin_dimensions.rho))."
-    )
+    n_p = div(length(rho), func.spin_dimensions.rho)
 
-    n_p = Int(length(rho) / func.spin_dimensions.rho)
-    kwargs = Dict(kwargs)
-    for argument in vcat(INPUT[func.family]..., ARGUMENTS[func.family]...)
-        argument == :rho && continue
-        haskey(kwargs, argument) || continue
-
-        # Check dimensionality
+    max_derivative_order = -1
+    for (argument, value) in kwargs
         n_spin = getfield(func.spin_dimensions, argument)
-        if length(kwargs[argument]) != n_spin * n_p
+        if length(value) != n_spin * n_p
             throw(DimensionMismatch("$argument should have n_spin * n_p elements " *
                                     "(n_spin=$n_spin, n_p=$n_p"))
         end
-
-        # Check derivative support in functional
-        order, flag = derivative_flag(func.family, argument)
-        if !(flag in func.flags) && flag != :unknown
-            throw(ArgumentError("Functional $(func.identifier) does not support " *
-                                "derivatives of order $order (like $argument)."))
-        end
-
+        max_derivative_order = max(max_derivative_order, get_derivative_order(argument))
     end
+
+    if max_derivative_order ≥ 0
+        flag = (:exc, :vxc, :fxc, :kxc, :lxc)[max_derivative_order+1]
+        if !(flag in func.flags)
+            throw(ArgumentError("Functional $(func.identifier) does not support " *
+                                "derivatives of order $max_derivative_order."))
+        end
+    end
+
     evaluate!(func, Val(func.family), rho; kwargs...)
+end
+
+# The required / allowed input and output arguments per functional family
+function get_evaluate_arguments(func, derivative_order)
+    args = [(:zk, :vrho, :v2rho2, :v3rho3, :v4rho4)[1+derivative_order]]  # LDA arguments
+
+    d = derivative_order
+    if func.family in (:gga, :hyb_gga, :mgga, :hyb_mgga)
+        d == 1 && append!(args, [:vsigma])
+        d == 2 && append!(args, [:v2rhosigma, :v2sigma2])
+        d == 3 && append!(args, [:v3rho2sigma, :v3rhosigma2, :v3sigma3])
+        d == 4 && append!(args, [:v4rho3sigma, :v4rho2sigma2, :v4rhosigma3, :v4sigma4])
+    end
+    if func.family in (:mgga, :hyb_mgga) && needs_tau(func)
+        d == 1 && append!(args, [:vtau])
+        d == 2 && append!(args, [:v2rhotau, :v2sigmatau, :v2tau2])
+        d == 3 && append!(args, [:v3rho2tau, :v3rhosigmatau, :v3rhotau2, :v3sigma2tau,
+                                 :v3sigmatau2, :v3tau3])
+        d == 4 && append!(args, [:v4rho2sigmatau, :v4rho2tau2, :v4rho3tau, :v4rhosigma2tau,
+                                 :v4rhosigmatau2, :v4rhotau3, :v4sigma3tau, :v4sigma2tau2,
+                                 :v4sigmatau3, :v4tau4])
+    end
+    if func.family in (:mgga, :hyb_mgga) && needs_laplacian(func)
+        d == 1 && append!(args, [:vlapl,])
+        d == 2 && append!(args, [:v2rholapl, :v2sigmalapl, :v2lapl2])
+        d == 3 && append!(args, [:v3rho2lapl, :v3rhosigmalapl, :v3rholapl2, :v3sigma2lapl,
+                                 :v3sigmalapl2, :v3lapl3])
+        d == 4 && append!(args, [:v4rho2sigmalapl, :v4rho2lapl2, :v4rho3lapl, :v4rhosigma2lapl,
+                                 :v4rhosigmalapl2, :v4rholapl3, :v4sigma3lapl, :v4sigma2lapl2,
+                                 :v4sigmalapl3, :v4lapl4])
+    end
+    if func.family in (:mgga, :hyb_mgga) && needs_laplacian(func) && needs_tau(func)
+        d == 2 && append!(args, [:v2lapltau])
+        d == 3 && append!(args, [:v3rholapltau, :v3sigmalapltau, :v3lapl2tau, :v3lapltau2])
+        d == 4 && append!(args, [:v4rho2lapltau, :v4rhosigmalapltau, :v4rholapl2tau,
+                                 :v4rholapltau2, :v4sigma2lapltau, :v4sigmalapl2tau,
+                                 :v4sigmalapltau2, :v4lapl3tau, :v4lapl2tau2, :v4lapltau3])
+    end
+
+    args
+end
+
+function get_derivative_order(argument::Symbol)
+    argument in (:rho,   :sigma,  :tau,  :lapl) && return -1
+    argument == :zk && return 0
+    argument in (:vrho, :vsigma, :vtau, :vlapl) && return  1
+    argument in (:v2rho2, :v2rhosigma, :v2rholapl, :v2rhotau, :v2sigma2,
+                 :v2sigmalapl, :v2sigmatau, :v2lapl2, :v2lapltau, :v2tau2) && return 2
+    argument in (:v3rho3, :v3rho2sigma, :v3rho2lapl, :v3rho2tau, :v3rhosigma2,
+                 :v3rhosigmalapl, :v3rhosigmatau, :v3rholapl2, :v3rholapltau,
+                 :v3rhotau2, :v3sigma3, :v3sigma2lapl, :v3sigma2tau,
+                 :v3sigmalapl2, :v3sigmalapltau, :v3sigmatau2, :v3lapl3,
+                 :v3lapl2tau, :v3lapltau2, :v3tau3) && return 3
+    argument in (:v4rho4, :v4rho3sigma, :v4rho3lapl, :v4rho3tau, :v4rho2sigma2,
+                 :v4rho2sigmalapl, :v4rho2sigmatau, :v4rho2lapl2, :v4rho2lapltau,
+                 :v4rho2tau2, :v4rhosigma3, :v4rhosigma2lapl, :v4rhosigma2tau,
+                 :v4rhosigmalapl2, :v4rhosigmalapltau, :v4rhosigmatau2, :v4rholapl3,
+                 :v4rholapl2tau, :v4rholapltau2, :v4rhotau3, :v4sigma4, :v4sigma3lapl,
+                 :v4sigma3tau, :v4sigma2lapl2, :v4sigma2lapltau, :v4sigma2tau2,
+                 :v4sigmalapl3, :v4sigmalapl2tau, :v4sigmalapltau2, :v4sigmatau3,
+                 :v4lapl4, :v4lapl3tau, :v4lapl2tau2, :v4lapltau3, :v4tau4) && return 4
+    throw(ArgumentError("Unknown derivative argument: $argument"))
 end
 
 
@@ -145,13 +148,12 @@ end
 # Dispatch can be done on the rho argument, which is not a kwarg in this function.
 const OptArray = Union{Array{Float64}, Ptr{Nothing}}
 
-
 function evaluate!(func::Functional, ::Union{Val{:lda},Val{:hyb_lda}}, rho::Array{Float64};
                    zk::OptArray=C_NULL,
                    vrho::OptArray=C_NULL, v2rho2::OptArray=C_NULL,
                    v3rho3::OptArray=C_NULL, v4rho4::OptArray=C_NULL)
-    np = Int(length(rho) / func.spin_dimensions.rho)
-    xc_lda(func.pointer_, np, rho, zk, vrho, v2rho2, v3rho3, v4rho4)
+    n_p = div(length(rho), func.spin_dimensions.rho)
+    xc_lda(func.pointer_, n_p, rho, zk, vrho, v2rho2, v3rho3, v4rho4)
 end
 
 
@@ -165,8 +167,8 @@ function evaluate!(func::Functional, ::Union{Val{:gga},Val{:hyb_gga}}, rho::Arra
                    v4rho4::OptArray=C_NULL, v4rho3sigma::OptArray=C_NULL,
                    v4rho2sigma2::OptArray=C_NULL, v4rhosigma3::OptArray=C_NULL,
                    v4sigma4::OptArray=C_NULL)
-    np = Int(length(rho) / func.spin_dimensions.rho)
-    xc_gga(func.pointer_, np, rho, sigma, zk, vrho, vsigma, v2rho2, v2rhosigma, v2sigma2,
+    n_p = div(length(rho), func.spin_dimensions.rho)
+    xc_gga(func.pointer_, n_p, rho, sigma, zk, vrho, vsigma, v2rho2, v2rhosigma, v2sigma2,
            v3rho3, v3rho2sigma, v3rhosigma2, v3sigma3,
            v4rho4, v4rho3sigma, v4rho2sigma2, v4rhosigma3, v4sigma4)
 end
@@ -244,11 +246,15 @@ function evaluate!(func::Functional, ::Union{Val{:mgga},Val{:hyb_mgga}}, rho::Ar
                    v4lapl2tau2::OptArray=C_NULL,
                    v4lapltau3::OptArray=C_NULL,
                    v4tau4::OptArray=C_NULL)
-    # check if the mGGA functional needs tau or lapl
-    needs_tau(func)       && tau  === C_NULL && throw(ArgumentError("Functional $(func.identifier) requires tau"))
-    needs_laplacian(func) && lapl === C_NULL && throw(ArgumentError("Functional $(func.identifier) requires lapl"))
-    np = Int(length(rho) / func.spin_dimensions.rho)
-    xc_mgga(func.pointer_, np, rho, sigma, lapl, tau, zk, vrho, vsigma, vlapl, vtau,
+    if needs_tau(func) && tau === C_NULL
+        throw(ArgumentError("Functional $(func.identifier) requires tau."))
+    end
+    if needs_laplacian(func) && lapl === C_NULL
+        throw(ArgumentError("Functional $(func.identifier) requires lapl."))
+    end
+
+    n_p = div(length(rho), func.spin_dimensions.rho)
+    xc_mgga(func.pointer_, n_p, rho, sigma, lapl, tau, zk, vrho, vsigma, vlapl, vtau,
             v2rho2, v2rhosigma, v2rholapl, v2rhotau, v2sigma2, v2sigmalapl,
             v2sigmatau, v2lapl2, v2lapltau, v2tau2, v3rho3, v3rho2sigma,
             v3rho2lapl, v3rho2tau, v3rhosigma2, v3rhosigmalapl, v3rhosigmatau,
