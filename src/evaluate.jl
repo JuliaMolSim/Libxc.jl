@@ -59,8 +59,14 @@ depend on the functional type (`rho` for all functionals, `sigma` for GGA and mG
 ignored, e.g. you can pass `tau=nothing` for GGA or laplace-only mGGA functionals.
 """
 function evaluate!(func::Functional; rho::AbstractArray, kwargs...)
-    # Remove nothing values
-    kwargs = filter(argval -> !isnothing(last(argval)), kwargs)
+    # Remove nothing values and arguments where Libxc selects the spin dimensions
+    # as zero. The latter is saying that this argument is not needed for evaluating
+    # the functional. E.g. :sigma and :vsigma will have a spin dimension of zero
+    # for an LDA functional.
+    kwargs = filter(kwargs) do argval
+        argument, value = argval
+        getfield(func.spin_dimensions, argument) > 0 && !isnothing(value)
+    end
 
     n_p = div(length(rho), func.spin_dimensions.rho)
     max_derivative_order = -1

@@ -36,6 +36,10 @@ end
     result = evaluate(hyb_lda_xc; rho, derivatives=0:1)
     @test result.zk ≈ [-0.162837, -0.234719, -0.286980, -0.329442, -0.365816] atol=1e-5
 
+    # LDA, but also pass sigma ... because this triggered a bug previously
+    result = evaluate(hyb_lda_xc; rho, sigma, derivatives=0:1)
+    @test result.zk ≈ [-0.162837, -0.234719, -0.286980, -0.329442, -0.365816] atol=1e-5
+
     # GGA
     gga_x = Functional(:hyb_gga_x_s12h)
     result = evaluate(gga_x; rho, sigma, derivatives=0:1)
@@ -50,6 +54,11 @@ end
     # LDA
     func = Functional(:lda_x)
     evaluate!(func; rho, zk=result)
+    @test result ≈ [-0.342809, -0.431912, -0.494416, -0.544175, -0.586194] atol=1e-5
+
+    # LDA, but also pass sigma ... which triggered a bur previously
+    func = Functional(:lda_x)
+    evaluate!(func; rho, sigma, zk=result)
     @test result ≈ [-0.342809, -0.431912, -0.494416, -0.544175, -0.586194] atol=1e-5
 
     # GGA
@@ -100,6 +109,7 @@ end
     shape = (2, 3, 4)
     rho   = reshape(abs.(randn(shape)), 1, shape...)
     sigma = reshape(abs.(randn(shape)), 1, shape...)
+    tau   = reshape(abs.(randn(shape)), 1, shape...)
 
     # Duplicate rho and sigma for spin = 2 tests
     rho2 = 0.5vcat(rho, rho)
@@ -107,11 +117,11 @@ end
 
     # LSDA
     for sym in (:lda_x, :lda_c_vwn)
-        res = evaluate(Functional(sym, n_spin=1), rho=rho, zk=zeros(shape))
+        res = evaluate(Functional(sym, n_spin=1), rho=rho, tau=tau, zk=zeros(shape))
         @test size(res.zk) == shape
         @test size(res.vrho) == (1, shape...)
 
-        res2 = evaluate(Functional(sym, n_spin=2), rho=rho2)
+        res2 = evaluate(Functional(sym, n_spin=2), rho=rho2, sigma=sigma2)
         @test size(res2.zk) == shape
         @test size(res2.vrho) == (2, shape...)
 
@@ -122,7 +132,7 @@ end
 
     # GGA
     for sym in (:gga_x_pbe, :gga_c_pbe)
-        res = evaluate(Functional(sym, n_spin=1), rho=rho, sigma=sigma)
+        res = evaluate(Functional(sym, n_spin=1), rho=rho, sigma=sigma, tau=tau)
         @test size(res.zk) == shape
         @test size(res.vrho) == (1, shape...)
         @test size(res.vsigma) == (1, shape...)
@@ -142,11 +152,17 @@ end
 @testset "mGGA evaluate! without Laplacian" begin
     rho    = [0.1, 0.2, 0.3, 0.4, 0.5]
     sigma  = [0.2, 0.3, 0.4, 0.5, 0.6]
+    lapl   = [-0.2, -0.3, -0.4, -0.5, -0.6]
     tau    = [0.5, 0.4, 0.3, 0.2, 0.1]
     result = zeros(Float64, 5)
 
     tpss_x = Functional(:mgga_x_tpss, n_spin=1)
     evaluate!(tpss_x; rho, sigma, tau, zk=result)
+    @test result ≈ [-0.4254894, -0.4685985, -0.5341998, -0.6017734, -0.6646443] atol=1e-6
+
+    # Give some excess arguments (lapl)
+    tpss_x = Functional(:mgga_x_tpss, n_spin=1)
+    evaluate!(tpss_x; rho, sigma, tau, lapl, zk=result)
     @test result ≈ [-0.4254894, -0.4685985, -0.5341998, -0.6017734, -0.6646443] atol=1e-6
 end
 
