@@ -14,7 +14,7 @@ CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 LibxcCudaExt = "CUDA"
 
 [compat]
-CUDA = "5"
+CUDA = "5, 6"
 Libxc_GPU_jll = "7"
 Libxc_jll = "7"
 julia = "1.10"
