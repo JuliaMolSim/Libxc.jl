@@ -5,8 +5,8 @@ using CUDA
 
 function __init__()
     if CUDA.functional()
-        if !Libxc_GPU_jll.is_available() && CUDA.runtime_version() > v"13.1"
-            @warn("Libxc_GPU_jll currently not available for CUDA > v13.1." *
+        if !Libxc_GPU_jll.is_available() && CUDA.runtime_version() > v"13.3"
+            @warn("Libxc_GPU_jll currently not available for CUDA > v13.3." *
                   "Please use a lower version of CUDA for support." *
                   """(e.g. `CUDA.set_runtime_version!(v"12.8")`)""")
         end
