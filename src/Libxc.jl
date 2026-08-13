@@ -7,6 +7,7 @@ include("gen/common.jl")
 include("gen/api.jl")
 include("Functional.jl")
 include("evaluate.jl")
+include("gpu.jl")
 
 const libxc_version = VersionNumber(XC_VERSION)
 const libxc_doi = unsafe_string(Libxc.xc_reference_doi())
@@ -18,8 +19,9 @@ A local path configured via [`set_cuda_libxc_path!`](@ref) takes precedence.
 If no local path is configured, fall back to the library provided by
 [`Libxc_GPU_jll`](@ref) when available.
 """
-cuda_libxc_path() = @load_preference("libxc_cuda_path",
-                                      Libxc_GPU_jll.is_available() ? Libxc_GPU_jll.libxc : nothing)
+const _cuda_libxc_path = @load_preference("libxc_cuda_path",
+                                          Libxc_GPU_jll.is_available() ? Libxc_GPU_jll.libxc : nothing)
+cuda_libxc_path() = _cuda_libxc_path
 
 """Is the CUDA version of libxc available on this platform"""
 has_cuda() = !isnothing(cuda_libxc_path())
@@ -52,7 +54,8 @@ Return the path to the AMDGPU (ROCm/HIP) version of libxc.
 A local path configured via [`set_amdgpu_libxc_path!`](@ref) must be
 provided, as no JLL is available for AMDGPU.
 """
-amdgpu_libxc_path() = @load_preference("libxc_amdgpu_path", nothing)
+const _amdgpu_libxc_path = @load_preference("libxc_amdgpu_path", nothing)
+amdgpu_libxc_path() = _amdgpu_libxc_path
 
 """Is the AMDGPU version of libxc available on this platform"""
 has_amdgpu() = !isnothing(amdgpu_libxc_path())
@@ -98,5 +101,6 @@ export is_lda, is_gga, is_mgga, is_hybrid, is_vv10, is_range_separated, is_globa
 export needs_laplacian, needs_tau
 export cuda_libxc_path, set_cuda_libxc_path!
 export amdgpu_libxc_path, set_amdgpu_libxc_path!
+export @define_gpu_methods
 
 end  # module
