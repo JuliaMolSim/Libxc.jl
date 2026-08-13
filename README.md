@@ -70,6 +70,18 @@ To unset the preference and fall back to `Libxc_GPU_jll`, use
 `Libxc.set_cuda_libxc_path!(nothing)`. A Julia restart is required for the 
 change to take effect.
 
+### AMDGPU support
+There is no JLL for AMDGPU (ROCm/HIP), so a local HIP build of libxc must
+be provided. Set the `libxc_amdgpu_path` preference:
+```julia
+using Libxc
+Libxc.set_amdgpu_libxc_path!("/path/to/your/local/libxc_hip.so")
+```
+After restarting Julia, `evaluate` called with `ROCArray`s will use the
+configured library. To unset the preference, use
+`Libxc.set_amdgpu_libxc_path!(nothing)`. A Julia restart is required for
+the change to take effect.
+
 ## Status
 Full support for evaluating LDA, GGA and meta-GGA functionals
 on CPUs as shown above.

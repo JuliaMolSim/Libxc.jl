@@ -46,6 +46,38 @@ function set_cuda_libxc_path!(path::Union{AbstractString,Nothing})
     end
 end
 
+"""
+Return the path to the AMDGPU (ROCm/HIP) version of libxc.
+
+A local path configured via [`set_amdgpu_libxc_path!`](@ref) must be
+provided, as no JLL is available for AMDGPU.
+"""
+amdgpu_libxc_path() = @load_preference("libxc_amdgpu_path", nothing)
+
+"""Is the AMDGPU version of libxc available on this platform"""
+has_amdgpu() = !isnothing(amdgpu_libxc_path())
+
+"""
+    set_amdgpu_libxc_path!(path::Union{AbstractString,Nothing})
+
+Configure a local AMDGPU (ROCm/HIP) version of libxc. There is no JLL
+for AMDGPU, so an external library must be provided. The `path` must
+point to a shared library compatible with the ROCm/HIP version in use.
+
+Set `path` to `nothing` to remove a previously configured local path.
+
+The preference is stored in `LocalPreferences.toml` and takes effect after
+restarting Julia.
+"""
+function set_amdgpu_libxc_path!(path::Union{AbstractString,Nothing})
+    if isnothing(path)
+        @delete_preferences!("libxc_amdgpu_path")
+    else
+        isfile(path) || error("Path $path does not exist.")
+        @set_preferences!("libxc_amdgpu_path" => path)
+    end
+end
+
 """Return the list of available libxc functionals as strings"""
 function available_functionals()
     n_xc = xc_number_of_functionals()
@@ -65,5 +97,6 @@ export Functional, evaluate, evaluate!, supported_derivatives
 export is_lda, is_gga, is_mgga, is_hybrid, is_vv10, is_range_separated, is_global_hybrid
 export needs_laplacian, needs_tau
 export cuda_libxc_path, set_cuda_libxc_path!
+export amdgpu_libxc_path, set_amdgpu_libxc_path!
 
 end  # module

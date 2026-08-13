@@ -9,12 +9,15 @@ Libxc_jll = "a56a6d9d-ad03-58af-ab61-878bf78270d6"
 Preferences = "21216c6a-2e73-6563-6e65-726566657250"
 
 [weakdeps]
+AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 
 [extensions]
+LibxcAMDGPUExt = "AMDGPU"
 LibxcCudaExt = "CUDA"
 
 [compat]
+AMDGPU = "1, 2"
 CUDA = "5, 6"
 Libxc_GPU_jll = "7"
 Libxc_jll = "7"
