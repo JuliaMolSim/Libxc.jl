@@ -49,12 +49,26 @@ Recently GPU support has been added. Whenever `evaluate` is called
 with `CuArray`s, the computation will automatically be done with the CUDA
 version of libxc. Due to delays in the BinaryBuilder / Yggdrasil infrastructure
 it often happens that the most recent CUDA version (shipped by default
-in CUDA.jl) is not yet supported. In this case using the package will throw
+in CUDA.jl) is not yet supported. In this case, using the package will throw
 a warning and you should manually set the CUDA version to a lower version, for example,
 ```julia
 using CUDA
 CUDA.set_runtime_version!(v"12.8")
 ```
+
+Alternatively, you can use a locally-built CUDA version of libxc by setting
+the `libxc_cuda_path` preference:
+```julia
+using Libxc
+Libxc.set_cuda_libxc_path!("/path/to/your/local/libxc.so")
+```
+This writes the path to `LocalPreferences.toml` and takes precedence over
+the library shipped by `Libxc_GPU_jll`. This is particularly useful when 
+`Libxc_GPU_jll` is not available, either because the CUDA version is too
+recent, or a local CUDA installation is used (e.g. on a compute cluster). 
+To unset the preference and fall back to `Libxc_GPU_jll`, use 
+`Libxc.set_cuda_libxc_path!(nothing)`. A Julia restart is required for the 
+change to take effect.
 
 ## Status
 Full support for evaluating LDA, GGA and meta-GGA functionals

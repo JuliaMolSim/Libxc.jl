@@ -1,20 +1,23 @@
 module LibxcCudaExt
 import Libxc_GPU_jll
-using Libxc: Libxc, xc_func_type, Functional
+using Libxc: Libxc, xc_func_type, Functional, cuda_libxc_path
 using CUDA
 
 function __init__()
     if CUDA.functional()
-        if !Libxc_GPU_jll.is_available() && CUDA.runtime_version() > v"13.3"
-            @warn("Libxc_GPU_jll currently not available for CUDA > v13.3." *
-                  "Please use a lower version of CUDA for support." *
-                  """(e.g. `CUDA.set_runtime_version!(v"12.8")`)""")
+        if isnothing(cuda_libxc_path())
+            @warn("No CUDA build of libxc is available for the current platform. " *
+                  "If your CUDA installation is from a JLL artifact, note that " *
+                  "CUDA > v13.3 is not yet supported. Please use a lower version " *
+                  """(e.g. `CUDA.set_runtime_version!(v"12.8")`). """ *
+                  "Otherwise, you can provide a path to a local libxc build via " *
+                  "`Libxc.set_cuda_libxc_path!`.")
         end
     end
 end
 
-if Libxc_GPU_jll.is_available()
-const libxc_gpu  = Libxc_GPU_jll.libxc
+const libxc_gpu = cuda_libxc_path()
+if !isnothing(libxc_gpu)
 const CuArray    = CUDA.CuArray
 const CuPtr      = CUDA.CuPtr
 const CU_NULL    = CUDA.CU_NULL
