@@ -82,6 +82,27 @@ configured library. To unset the preference, use
 `Libxc.set_amdgpu_libxc_path!(nothing)`. A Julia restart is required for
 the change to take effect.
 
+### How to build a local GPU version of libxc
+The libxc library is easy to build, and only requires 2 dependencies: CMake and CUDA/HIP.
+Git clone the libxc [repository](https://gitlab.com/libxc/libxc), and run the following
+bash instructions (e.g. for an AMD Mi250 GPU):
+
+```sh
+cd libxc
+mkdir build && cd build
+
+cmake -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX="." \
+      -DBUILD_SHARED_LIBS=ON \
+      -DBUILD_TESTING=OFF \
+      -DENABLE_HIP=ON \
+      -DCMAKE_HIP_ARCHITECTURES=gfx90a ..
+cmake --build . --parallel $nproc
+cmake --install .
+```
+
+For a CUDA build, only the last 2 CMake options change, i.e. `-DENABLE_CUDA` and `-DCMAKE_CUDA_ARCHITECTURE`.
+
 ## Status
 Full support for evaluating LDA, GGA and meta-GGA functionals
 on CPUs as shown above.

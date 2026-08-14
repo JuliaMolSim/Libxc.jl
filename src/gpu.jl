@@ -1,15 +1,83 @@
 """
+Return the path to the CUDA version of libxc.
+
+A local path configured via [`set_cuda_libxc_path!`](@ref) takes precedence.
+If no local path is configured, fall back to the library provided by
+[`Libxc_GPU_jll`](@ref) when available.
+"""
+const _cuda_libxc_path = @load_preference("libxc_cuda_path",
+                                          Libxc_GPU_jll.is_available() ? Libxc_GPU_jll.libxc : nothing)
+cuda_libxc_path() = _cuda_libxc_path
+
+"""Is the CUDA version of libxc available on this platform"""
+has_cuda() = !isnothing(cuda_libxc_path())
+
+"""
+    set_cuda_libxc_path!(path::Union{AbstractString,Nothing})
+
+Configure a local CUDA version of libxc to use instead of the one provided
+by [`Libxc_GPU_jll`](@ref). The `path` must point to a shared library
+compatible with the CUDA version in use.
+
+Set `path` to `nothing` to remove a previously configured local path and
+fall back to [`Libxc_GPU_jll`](@ref).
+
+The preference is stored in `LocalPreferences.toml` and takes effect after
+restarting Julia.
+"""
+function set_cuda_libxc_path!(path::Union{AbstractString,Nothing})
+    if isnothing(path)
+        @delete_preferences!("libxc_cuda_path")
+    else
+        isfile(path) || error("Path $path does not exist.")
+        @set_preferences!("libxc_cuda_path" => path)
+    end
+end
+
+"""
+Return the path to the AMDGPU (ROCm/HIP) version of libxc.
+
+A local path configured via [`set_amdgpu_libxc_path!`](@ref) must be
+provided, as no JLL is available for AMDGPU.
+"""
+const _amdgpu_libxc_path = @load_preference("libxc_amdgpu_path", nothing)
+amdgpu_libxc_path() = _amdgpu_libxc_path
+
+"""Is the AMDGPU version of libxc available on this platform"""
+has_amdgpu() = !isnothing(amdgpu_libxc_path())
+
+"""
+    set_amdgpu_libxc_path!(path::Union{AbstractString,Nothing})
+
+Configure a local AMDGPU (ROCm/HIP) version of libxc. There is no JLL
+for AMDGPU, so an external library must be provided. The `path` must
+point to a shared library compatible with the ROCm/HIP version in use.
+
+Set `path` to `nothing` to remove a previously configured local path.
+
+The preference is stored in `LocalPreferences.toml` and takes effect after
+restarting Julia.
+"""
+function set_amdgpu_libxc_path!(path::Union{AbstractString,Nothing})
+    if isnothing(path)
+        @delete_preferences!("libxc_amdgpu_path")
+    else
+        isfile(path) || error("Path $path does not exist.")
+        @set_preferences!("libxc_amdgpu_path" => path)
+    end
+end
+
+"""
     @define_gpu_methods(lib, array_t, ptr_t, null_t)
 
-Generate `evaluate!` methods and helper functions for a GPU backend, using
-a shared libxc library at path `lib` (a `String`).
+Generate `evaluate!` methods and helper functions for a given GPU backend, using
+a shared libxc library given as a path `lib` (a `String`).
 
-- `array_t`: the concrete array type for device arrays (e.g. `CuArray{Float64}`)
-- `ptr_t`:   the pointer type for device memory (e.g. `CuPtr{Cdouble}`)
-- `null_t`:  the null sentinel for optional device pointers (e.g. `CU_NULL`)
+- `array_t`: the concrete array type for device arrays (`CuArray{Float64}` or `ROCArray{Float64}`)
+- `ptr_t`:   the pointer type for device memory (`CuPtr{Cdouble}` or `Ptr{Cdouble}`)
+- `null_t`:  the null sentinel for optional device pointers (`CU_NULL` or `C_NULL`)
 
-Should be called only when `lib` is not `nothing`; guard with `if !isnothing(lib)`
-in the calling extension.
+It is assumed that !isnothing(lib), to be checked before calling the macro.
 """
 macro define_gpu_methods(lib, array_t, ptr_t, null_t)
     esc(quote

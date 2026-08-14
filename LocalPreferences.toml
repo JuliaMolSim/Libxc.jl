@@ -1,6 +1,6 @@
 [Libxc]
 # Path to a local CUDA build of libxc, overriding Libxc_GPU_jll
-# libxc_cuda_path = "/path/to/your/local/libxc.so"
+# libxc_cuda_path = "/path/to/your/local/cuda/libxc.so"
 
 # Path to a local AMDGPU (ROCm/HIP) build of libxc (no JLL is available)
-# libxc_amdgpu_path = "/path/to/your/local/libxc_hip.so"
+# libxc_amdgpu_path = "/path/to/your/local/hip/libxc.so"
