@@ -1,3 +1,5 @@
+using Preferences: @load_preference, @set_preferences!, @delete_preferences!
+
 """
 Return the path to the CUDA version of libxc.
 
@@ -5,12 +7,12 @@ A local path configured via [`set_cuda_libxc_path!`](@ref) takes precedence.
 If no local path is configured, fall back to the library provided by
 [`Libxc_GPU_jll`](@ref) when available.
 """
-const _cuda_libxc_path = @load_preference("libxc_cuda_path",
-                                          Libxc_GPU_jll.is_available() ? Libxc_GPU_jll.libxc : nothing)
-cuda_libxc_path() = _cuda_libxc_path
+const cuda_libxc_path = @load_preference("libxc_cuda_path",
+                                         Libxc_GPU_jll.is_available() ? Libxc_GPU_jll.libxc : nothing)
+
 
 """Is the CUDA version of libxc available on this platform"""
-has_cuda() = !isnothing(cuda_libxc_path())
+has_cuda() = !isnothing(cuda_libxc_path)
 
 """
     set_cuda_libxc_path!(path::Union{AbstractString,Nothing})
@@ -40,11 +42,10 @@ Return the path to the AMDGPU (ROCm/HIP) version of libxc.
 A local path configured via [`set_amdgpu_libxc_path!`](@ref) must be
 provided, as no JLL is available for AMDGPU.
 """
-const _amdgpu_libxc_path = @load_preference("libxc_amdgpu_path", nothing)
-amdgpu_libxc_path() = _amdgpu_libxc_path
+const amdgpu_libxc_path = @load_preference("libxc_amdgpu_path", nothing)
 
 """Is the AMDGPU version of libxc available on this platform"""
-has_amdgpu() = !isnothing(amdgpu_libxc_path())
+has_amdgpu() = !isnothing(amdgpu_libxc_path)
 
 """
     set_amdgpu_libxc_path!(path::Union{AbstractString,Nothing})

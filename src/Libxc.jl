@@ -1,7 +1,6 @@
 module Libxc
 using Libxc_jll: libxc
 import Libxc_GPU_jll
-using Preferences: @load_preference, @set_preferences!, @delete_preferences!
 
 include("gen/common.jl")
 include("gen/api.jl")
@@ -32,6 +31,5 @@ export is_lda, is_gga, is_mgga, is_hybrid, is_vv10, is_range_separated, is_globa
 export needs_laplacian, needs_tau
 export cuda_libxc_path, set_cuda_libxc_path!
 export amdgpu_libxc_path, set_amdgpu_libxc_path!
-export @define_gpu_methods
 
 end  # module
