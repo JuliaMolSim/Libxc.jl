@@ -4,7 +4,7 @@ using AMDGPU
 
 function __init__()
     if AMDGPU.functional()
-        if isnothing(amdgpu_libxc_path())
+        if isnothing(amdgpu_libxc_path)
             @warn("No HIP build of libxc is available for the current platform. " *
                   "You can provide a path to a local libxc build via " *
                   "`Libxc.set_amdgpu_libxc_path!`, or rely on the CPU library.")
@@ -12,9 +12,8 @@ function __init__()
     end
 end
 
-const libxc_amdgpu = amdgpu_libxc_path()
-if !isnothing(libxc_amdgpu)
-    @define_gpu_methods libxc_amdgpu AMDGPU.ROCArray{Float64} Ptr{Cdouble} C_NULL
+if !isnothing(amdgpu_libxc_path)
+    @define_gpu_methods amdgpu_libxc_path AMDGPU.ROCArray{Float64} Ptr{Cdouble} C_NULL
 end
 
 end  # module

@@ -5,7 +5,7 @@ using CUDA
 
 function __init__()
     if CUDA.functional()
-        if isnothing(cuda_libxc_path())
+        if isnothing(cuda_libxc_path)
             @warn("No CUDA build of libxc is available for the current platform. " *
                   "If your CUDA installation is from a JLL artifact, note that " *
                   "CUDA > v13.3 is not yet supported. Please use a lower version " *
@@ -16,9 +16,8 @@ function __init__()
     end
 end
 
-const libxc_gpu = cuda_libxc_path()
-if !isnothing(libxc_gpu)
-    @define_gpu_methods libxc_gpu CUDA.CuArray{Float64} CUDA.CuPtr{Cdouble} CUDA.CU_NULL
+if !isnothing(cuda_libxc_path)
+    @define_gpu_methods cuda_libxc_path CUDA.CuArray{Float64} CUDA.CuPtr{Cdouble} CUDA.CU_NULL
 end
 
 end  # module
