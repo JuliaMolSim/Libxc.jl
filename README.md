@@ -49,12 +49,59 @@ Recently GPU support has been added. Whenever `evaluate` is called
 with `CuArray`s, the computation will automatically be done with the CUDA
 version of libxc. Due to delays in the BinaryBuilder / Yggdrasil infrastructure
 it often happens that the most recent CUDA version (shipped by default
-in CUDA.jl) is not yet supported. In this case using the package will throw
+in CUDA.jl) is not yet supported. In this case, using the package will throw
 a warning and you should manually set the CUDA version to a lower version, for example,
 ```julia
 using CUDA
 CUDA.set_runtime_version!(v"12.8")
 ```
+
+Alternatively, you can use a locally-built CUDA version of libxc by setting
+the `libxc_cuda_path` preference:
+```julia
+using Libxc
+Libxc.set_cuda_libxc_path!("/path/to/your/local/libxc.so")
+```
+This writes the path to `LocalPreferences.toml` and takes precedence over
+the library shipped by `Libxc_GPU_jll`. This is particularly useful when 
+`Libxc_GPU_jll` is not available, either because the CUDA version is too
+recent, or a local CUDA installation is used (e.g. on a compute cluster). 
+To unset the preference and fall back to `Libxc_GPU_jll`, use 
+`Libxc.set_cuda_libxc_path!(nothing)`. A Julia restart is required for the 
+change to take effect.
+
+### AMDGPU support
+There is no JLL for AMDGPU (ROCm/HIP), so a local HIP build of libxc must
+be provided. Set the `libxc_amdgpu_path` preference:
+```julia
+using Libxc
+Libxc.set_amdgpu_libxc_path!("/path/to/your/local/libxc_hip.so")
+```
+After restarting Julia, `evaluate` called with `ROCArray`s will use the
+configured library. To unset the preference, use
+`Libxc.set_amdgpu_libxc_path!(nothing)`. A Julia restart is required for
+the change to take effect.
+
+### How to build a local GPU version of libxc
+The libxc library is easy to build, and only requires 2 dependencies: CMake and CUDA/HIP.
+Git clone the libxc [repository](https://gitlab.com/libxc/libxc), and run the following
+bash instructions (e.g. for an AMD Mi250 GPU):
+
+```sh
+cd libxc
+mkdir build && cd build
+
+cmake -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX="." \
+      -DBUILD_SHARED_LIBS=ON \
+      -DBUILD_TESTING=OFF \
+      -DENABLE_HIP=ON \
+      -DCMAKE_HIP_ARCHITECTURES=gfx90a ..
+cmake --build . --parallel $nproc
+cmake --install .
+```
+
+For a CUDA build, only the last 2 CMake options change, i.e. `-DENABLE_CUDA` and `-DCMAKE_CUDA_ARCHITECTURE`.
 
 ## Status
 Full support for evaluating LDA, GGA and meta-GGA functionals

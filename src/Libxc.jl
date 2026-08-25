@@ -6,12 +6,10 @@ include("gen/common.jl")
 include("gen/api.jl")
 include("Functional.jl")
 include("evaluate.jl")
+include("gpu.jl")
 
 const libxc_version = VersionNumber(XC_VERSION)
 const libxc_doi = unsafe_string(Libxc.xc_reference_doi())
-
-"""Is the CUDA version of libxc available on this platform"""
-has_cuda() = Libxc_GPU_jll.is_available()
 
 """Return the list of available libxc functionals as strings"""
 function available_functionals()

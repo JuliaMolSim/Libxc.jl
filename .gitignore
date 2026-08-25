@@ -2,10 +2,10 @@
 *.jl.*.cov
 *.jl.mem
 Manifest.toml
+LocalPreferences.toml
 
 # vim temporaries
 *~
 .*.swp
 .*.swo
 
-LocalPreferences.toml
