@@ -29,7 +29,5 @@ export available_functionals
 export Functional, evaluate, evaluate!, supported_derivatives
 export is_lda, is_gga, is_mgga, is_hybrid, is_vv10, is_range_separated, is_global_hybrid
 export needs_laplacian, needs_tau
-export cuda_libxc_path, set_cuda_libxc_path!
-export amdgpu_libxc_path, set_amdgpu_libxc_path!
 
 end  # module
