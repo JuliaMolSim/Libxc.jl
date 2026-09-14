@@ -1,7 +1,7 @@
 name = "Libxc"
 uuid = "66e17ffc-8502-11e9-23b5-c9248d0eb96d"
 authors = ["Jason Eu <morty.yu@yahoo.com>", "Michael F. Herbst <info@michael-herbst.com>"]
-version = "0.3.26"
+version = "0.3.27"
 
 [deps]
 GPUArraysCore = "46192b85-c4d5-4398-a991-12ede77f4527"
