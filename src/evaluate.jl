@@ -280,3 +280,22 @@ function evaluate!(func::Functional, ::Union{Val{:mgga},Val{:hyb_mgga}}, rho::Ar
             v4sigmalapl2tau, v4sigmalapltau2, v4sigmatau3, v4lapl4, v4lapl3tau,
             v4lapl2tau2, v4lapltau3, v4tau4)
 end
+
+
+# Fallback for GPU arrays when no native GPU libxc build is available.
+# Input data is transfered to the CPU, evaluated, and results are copied back.
+function evaluate!(func::Functional,
+                   family::Union{Val{:lda},Val{:hyb_lda},
+                                 Val{:gga},Val{:hyb_gga},
+                                 Val{:mgga},Val{:hyb_mgga}},
+                   rho::AbstractGPUArray{Float64}; kwargs...)
+    rho_cpu = Array(rho)
+    kwargs_cpu = map(x -> x isa AbstractGPUArray ? Array(x) : x, values(kwargs))
+
+    evaluate!(func, family, rho_cpu; kwargs_cpu...)
+
+    for key in keys(kwargs)
+        kwargs[key] isa AbstractGPUArray && copyto!(kwargs[key], kwargs_cpu[key])
+    end
+    nothing
+end

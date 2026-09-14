@@ -7,6 +7,7 @@ function __init__()
     if CUDA.functional()
         if isnothing(cuda_libxc_path)
             @warn("No CUDA build of libxc is available for the current platform. " *
+                  "Falling back to CPU evaluation with automatic data transfers. " *
                   "If your CUDA installation is from a JLL artifact, note that " *
                   "CUDA > v13.3 is not yet supported. Please use a lower version " *
                   """(e.g. `CUDA.set_runtime_version!(v"12.8")`). """ *

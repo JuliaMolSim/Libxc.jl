@@ -6,8 +6,9 @@ function __init__()
     if AMDGPU.functional()
         if isnothing(amdgpu_libxc_path)
             @warn("No HIP build of libxc is available for the current platform. " *
+                  "Falling back to CPU evaluation with automatic data transfers. " *
                   "You can provide a path to a local libxc build via " *
-                  "`Libxc.set_amdgpu_libxc_path!`, or rely on the CPU library.")
+                  "`Libxc.set_amdgpu_libxc_path!`.")
         end
     end
 end

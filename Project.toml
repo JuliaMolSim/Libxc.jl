@@ -4,6 +4,7 @@ authors = ["Jason Eu <morty.yu@yahoo.com>", "Michael F. Herbst <info@michael-her
 version = "0.3.26"
 
 [deps]
+GPUArraysCore = "46192b85-c4d5-4398-a991-12ede77f4527"
 Libxc_GPU_jll = "25af9330-9b41-55d4-a324-1a83c0a0a1ac"
 Libxc_jll = "a56a6d9d-ad03-58af-ab61-878bf78270d6"
 Preferences = "21216c6a-2e73-6563-6e65-726566657250"
@@ -19,6 +20,7 @@ LibxcCudaExt = "CUDA"
 [compat]
 AMDGPU = "1, 2"
 CUDA = "5, 6"
+GPUArraysCore = "0.1, 0.2"
 Libxc_GPU_jll = "7"
 Libxc_jll = "7"
 Preferences = "1"

@@ -1,6 +1,7 @@
 module Libxc
 using Libxc_jll: libxc
 import Libxc_GPU_jll
+using GPUArraysCore: AbstractGPUArray
 
 include("gen/common.jl")
 include("gen/api.jl")
