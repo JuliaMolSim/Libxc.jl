@@ -15,11 +15,11 @@ if is_global_hybrid(func)
             "exact exchange")
 elseif is_range_separated(func)
     print("This is a range-separated hybrid functional with range-separation " *
-          "constant $(func.omega) and $(100func.alpha + 100func.beta)% short-range " *
-          "and $(100func.alpha) long-range exact exchange")
-    if :hyb_lcy in func.flags || :hym_camy in func.flags
+          "constant $(func.cam_omega) and $(100func.cam_alpha + 100func.cam_beta)% short-range " *
+          "and $(100func.cam_alpha) long-range exact exchange ")
+    if :hyb_lcy in func.flags || :hyb_camy in func.flags
         println("using the Yukawa kernel.")
-    elseif :hyb_lc in func.flags || :hym_cam in func.flags
+    elseif :hyb_lc in func.flags || :hyb_cam in func.flags
         println("using the Coulomb kernel.")
     end
 else
